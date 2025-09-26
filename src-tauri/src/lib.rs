@@ -1,3 +1,4 @@
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_serialplugin::{commands, desktop_api};
 
@@ -29,6 +30,10 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
         let app = app.clone();
         let port = port.clone();
         async move {
+            let mut buffer = String::new();
+            let mut last_data_at: Option<Instant> = None;
+            let idle_gap = Duration::from_millis(2000);
+
             loop {
                 match commands::read(
                     app.clone(),
@@ -39,7 +44,11 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                 ) {
                     Ok(chunk) => {
                         if !chunk.is_empty() {
-                            //TODO: remove in future. just for testing
+                            // append to csv dataset
+                            buffer.push_str(&chunk);
+                            last_data_at = Some(Instant::now());
+
+                            // TODO: remove in future if not needed
                             let _ = app.emit("serial:data", &chunk);
                             println!(
                                 "[serial {}] {} ({} bytes)",
@@ -48,8 +57,22 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                                 chunk.as_bytes().len()
                             );
                         }
-                    } // push to frontend
-                    Err(_) => { /* timeout or port empty; loop again */ }
+                    }
+                    Err(_) => {
+                        // timeout or no data; check for idle gap end-of-dataset
+                        if let Some(t) = last_data_at {
+                            if t.elapsed() >= idle_gap && !buffer.is_empty() {
+                                println!(
+                                    "[serial {}] csv dataset complete ({} bytes):\n{}",
+                                    port,
+                                    buffer.as_bytes().len(),
+                                    buffer
+                                );
+                                buffer.clear();
+                                last_data_at = None;
+                            }
+                        }
+                    }
                 }
             }
         }
