@@ -91,10 +91,7 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                             buffer.push_str(&chunk);
                             last_data_at = Some(Instant::now());
 
-                            // Optional: still emit per-chunk to the frontend
-                            let _ = app.emit("serial:data", &chunk);
-
-                            // Print only complete lines to avoid split logs
+                            // Accumulate and emit only complete lines to the frontend
                             line_buffer.push_str(&chunk);
                             loop {
                                 if let Some(pos) = line_buffer.find('\n') {
@@ -105,7 +102,9 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                                     if line.ends_with('\r') {
                                         line.pop();
                                     }
+                                    // Log and emit full line (prevents chunk boundary artifacts)
                                     println!("[serial {}] {}", target_port, line);
+                                    let _ = app.emit("serial:data", &line);
                                 } else {
                                     break;
                                 }
