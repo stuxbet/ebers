@@ -41,6 +41,8 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
         let app = app.clone();
         let target_port = port.clone();
         async move {
+            let mut line_buffer = String::new();
+
             let mut buffer = String::new();
             let mut last_data_at: Option<Instant> = None;
             let idle_gap = Duration::from_millis(2000);
@@ -89,14 +91,25 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                             buffer.push_str(&chunk);
                             last_data_at = Some(Instant::now());
 
-                            // TODO: remove in future if not needed
+                            // Optional: still emit per-chunk to the frontend
                             let _ = app.emit("serial:data", &chunk);
-                            println!(
-                                "[serial {}] {} ({} bytes)",
-                                target_port,
-                                chunk,
-                                chunk.as_bytes().len()
-                            );
+
+                            // Print only complete lines to avoid split logs
+                            line_buffer.push_str(&chunk);
+                            loop {
+                                if let Some(pos) = line_buffer.find('\n') {
+                                    let mut line: String = line_buffer.drain(..=pos).collect();
+                                    if line.ends_with('\n') {
+                                        line.pop();
+                                    }
+                                    if line.ends_with('\r') {
+                                        line.pop();
+                                    }
+                                    println!("[serial {}] {}", target_port, line);
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                     }
                     Err(_) => {
@@ -121,6 +134,17 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                         ) {
                             let present = ports.contains_key(&target_port);
                             if !present {
+                                // Treat disconnect as end-of-dataset too
+                                if !buffer.is_empty() {
+                                    println!(
+                                        "[serial {}] csv dataset complete ({} bytes):\n{}",
+                                        target_port,
+                                        buffer.as_bytes().len(),
+                                        buffer
+                                    );
+                                    buffer.clear();
+                                    last_data_at = None;
+                                }
                                 println!("[serial] device on {} disconnected", target_port);
                                 is_open = false;
                                 // back off briefly before attempting to reconnect
