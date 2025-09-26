@@ -1,0 +1,7 @@
+{
+  "emmet.includeLanguages": {
+    "rust": "html"
+  },
+  "rust-analyzer.cargo.target": "wasm32-unknown-unknown", //<-- use this if you're editing the UI "app" or 3D Rendering "ui_canvas"
+
+}
