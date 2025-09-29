@@ -18,6 +18,8 @@ extern "C" {
 pub fn App() -> impl IntoView {
     //this is just for displaying current serial data. will not be in use in production. in future just the csv will be sent from the back end for display purposes only.
     let (latest_serial, set_latest_serial) = signal(String::new());
+    let (connected, set_connected) = signal(false);
+
     spawn_local(async move {
         let _ = invoke("start_serial", JsValue::NULL).await;
 
@@ -34,6 +36,40 @@ pub fn App() -> impl IntoView {
                 console::log_1(&JsValue::from_str("serial:data: <no payload>"));
             }
         }) as Box<dyn FnMut(JsValue)>);
+
+        let update_connected = set_connected;
+        let status_event_handler = Closure::wrap(Box::new(move |event: JsValue| {
+            if let Ok(payload) = js_sys::Reflect::get(&event, &JsValue::from_str("payload")) {
+                // Try payload.connected boolean first
+                if let Ok(val) = js_sys::Reflect::get(&payload, &JsValue::from_str("connected")) {
+                    if let Some(b) = val.as_bool() {
+                        update_connected.set(b);
+                        console::log_1(&JsValue::from_str(&format!(
+                            "serial:status connected={}",
+                            b
+                        )));
+                    }
+                } else if let Some(b) = payload.as_bool() {
+                    // Or a bare boolean payload
+                    update_connected.set(b);
+                    console::log_1(&JsValue::from_str(&format!(
+                        "serial:status connected={} (bool)",
+                        b
+                    )));
+                } else {
+                    console::log_1(&payload);
+                }
+            } else {
+                console::log_1(&JsValue::from_str("serial:status: <no payload>"));
+            }
+        }) as Box<dyn FnMut(JsValue)>);
+        let _unlisten_status = listen(
+            "serial:status",
+            status_event_handler.as_ref().unchecked_ref(),
+        )
+        .await;
+        status_event_handler.forget();
+
         let _unlisten = listen("serial:data", serial_event_handler.as_ref().unchecked_ref()).await;
         serial_event_handler.forget();
     });
@@ -51,6 +87,10 @@ pub fn App() -> impl IntoView {
 
             <p><strong>Latest serial:</strong> { move || latest_serial.get() }</p>
 
+            <p><strong>Device:</strong> { move || if connected.get() { "Connected".to_string() } else { "Disconnected".to_string() } }</p>
+
+
         </main>
+
     }
 }

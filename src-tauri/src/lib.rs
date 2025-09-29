@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -24,6 +25,12 @@ fn try_load_dotenv() {
             }
         }
     }
+}
+
+#[derive(Serialize, Clone)]
+struct SerialStatus {
+    connected: bool,
+    port: Option<String>,
 }
 
 #[tauri::command]
@@ -67,6 +74,14 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                             is_open = true;
                             // reset dataset timing on (re)connect
                             last_data_at = None;
+                            // notify frontend of connection status
+                            let _ = app.emit(
+                                "serial:status",
+                                &SerialStatus {
+                                    connected: true,
+                                    port: Some(target_port.clone()),
+                                },
+                            );
                         }
                         Err(e) => {
                             // Not connected yet; wait and retry
@@ -145,6 +160,14 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                                     last_data_at = None;
                                 }
                                 println!("[serial] device on {} disconnected", target_port);
+                                // notify frontend of disconnection status
+                                let _ = app.emit(
+                                    "serial:status",
+                                    &SerialStatus {
+                                        connected: false,
+                                        port: Some(target_port.clone()),
+                                    },
+                                );
                                 is_open = false;
                                 // back off briefly before attempting to reconnect
                                 sleep(Duration::from_millis(500));
