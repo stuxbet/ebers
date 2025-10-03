@@ -5,6 +5,15 @@ use leptos::web_sys::console;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{prelude::*, JsCast};
 
+mod pages;
+use pages::{HomePage, ResultsPage};
+
+#[derive(Clone, PartialEq)]
+pub enum Page {
+    Home,
+    Results,
+}
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(catch, js_namespace = ["window", "__TAURI__", "core"])]
@@ -16,7 +25,7 @@ extern "C" {
 
 #[component]
 pub fn App() -> impl IntoView {
-    //this is just for displaying current serial data. will not be in use in production. in future just the csv will be sent from the back end for display purposes only.
+    let (current_page, set_current_page) = signal(Page::Home);
     let (latest_serial, set_latest_serial) = signal(String::new());
     let (connected, set_connected) = signal(false);
 
@@ -76,21 +85,20 @@ pub fn App() -> impl IntoView {
 
     view! {
         <main class="container">
-            <h1>"Welcome Foothold Labs!"</h1>
-
-            <div class="row">
-                <a href="https://footholdlabs.com/" target="_blank">
-                    <img src="https://media.licdn.com/dms/image/v2/C4E0BAQGTcebEYz_Hvg/company-logo_200_200/company-logo_200_200/0/1630569533433/foothold_labs_logo?e=1761782400&v=beta&t=6psnH45OQow8ZyMB9rjFBets4mI8M9KG5C7c8NEYnJs" class="logo tauri" alt="Foothold Labs logo"/>
-                </a>
-
-            </div>
-
-            <p><strong>Latest serial:</strong> { move || latest_serial.get() }</p>
-
-            <p><strong>Device:</strong> { move || if connected.get() { "Connected".to_string() } else { "Disconnected".to_string() } }</p>
-
-
+            {move || match current_page.get() {
+                Page::Home => view! {
+                    <HomePage
+                        connected=connected
+                        on_navigate_to_results=set_current_page
+                    />
+                }.into_any(),
+                Page::Results => view! {
+                    <ResultsPage
+                        latest_serial=latest_serial
+                        on_navigate_to_home=set_current_page
+                    />
+                }.into_any(),
+            }}
         </main>
-
     }
 }

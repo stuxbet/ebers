@@ -110,3 +110,118 @@ button {
     background-color: #0f0f0f69;
   }
 }
+
+/* Device Status Styles */
+.device-status {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-text {
+  font-size: 1.2em;
+  margin: 1rem 0;
+}
+
+.status-connected {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.status-disconnected {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.read-results-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.read-results-btn:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.connection-message {
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 1rem;
+}
+
+/* Results Page Styles */
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.home-btn {
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9em;
+}
+
+.home-btn:hover {
+  background-color: #4b5563;
+  border-color: #4b5563;
+}
+
+.results-content {
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.serial-data {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.serial-output {
+  background-color: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.results-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  margin-top: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .device-status {
+    background-color: rgba(31, 41, 55, 0.8);
+  }
+
+  .serial-data {
+    background-color: rgba(31, 41, 55, 0.8);
+  }
+
+  .results-info {
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+}
