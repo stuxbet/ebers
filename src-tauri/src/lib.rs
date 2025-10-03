@@ -1,3 +1,6 @@
+mod api_client;
+
+use api_client::{create_prediction_request, PredictionApiClient, PredictionResponse};
 use serde::Serialize;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -33,6 +36,18 @@ struct SerialStatus {
     port: Option<String>,
 }
 
+#[derive(Serialize, Clone)]
+struct PredictionLoading {
+    loading: bool,
+    dataset_id: Option<String>,
+}
+
+#[derive(Serialize, Clone)]
+struct PredictionError {
+    error: String,
+    dataset_id: Option<String>,
+}
+
 #[tauri::command]
 async fn start_serial(app: AppHandle) -> Result<(), String> {
     // Load .env if present and read config
@@ -42,16 +57,23 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(115_200);
+    let api_endpoint = std::env::var("PREDICTION_API_ENDPOINT")
+        .unwrap_or_else(|_| "http://localhost:8000/api/predict".to_string());
+
+    // Create API client
+    let api_client = PredictionApiClient::new(api_endpoint);
 
     // Spawn a background task that will auto-connect, read, and handle hot-plug
     tauri::async_runtime::spawn({
         let app = app.clone();
         let target_port = port.clone();
+        let baud_rate = baud;
         async move {
             let mut line_buffer = String::new();
 
             let mut buffer = String::new();
             let mut last_data_at: Option<Instant> = None;
+            let mut data_start_at: Option<Instant> = None;
             let idle_gap = Duration::from_millis(2000);
             let mut is_open = false;
 
@@ -104,7 +126,11 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                         if !chunk.is_empty() {
                             // append to csv dataset
                             buffer.push_str(&chunk);
-                            last_data_at = Some(Instant::now());
+                            let now = Instant::now();
+                            last_data_at = Some(now);
+                            if data_start_at.is_none() {
+                                data_start_at = Some(now);
+                            }
 
                             // Accumulate and emit only complete lines to the frontend
                             line_buffer.push_str(&chunk);
@@ -130,14 +156,89 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                         // timeout or no data; check for idle gap end-of-dataset
                         if let Some(t) = last_data_at {
                             if t.elapsed() >= idle_gap && !buffer.is_empty() {
+                                let collection_duration_ms = data_start_at
+                                    .map(|start| start.elapsed().as_millis() as u64)
+                                    .unwrap_or(0);
+
                                 println!(
-                                    "[serial {}] csv dataset complete ({} bytes):\n{}",
+                                    "[serial {}] csv dataset complete ({} bytes)",
                                     target_port,
-                                    buffer.as_bytes().len(),
-                                    buffer
+                                    buffer.as_bytes().len()
                                 );
+
+                                // Call prediction API
+                                let csv_data = buffer.clone();
+                                let app_clone = app.clone();
+                                let port_clone = target_port.clone();
+                                let api_client_clone = api_client.clone();
+
+                                tauri::async_runtime::spawn(async move {
+                                    // Emit loading state
+                                    let _ = app_clone.emit(
+                                        "serial:prediction_loading",
+                                        &PredictionLoading {
+                                            loading: true,
+                                            dataset_id: None,
+                                        },
+                                    );
+
+                                    // Create prediction request
+                                    match create_prediction_request(
+                                        &csv_data,
+                                        port_clone.clone(),
+                                        baud_rate,
+                                        collection_duration_ms,
+                                    ) {
+                                        Ok(request) => {
+                                            let dataset_id = request.dataset_id.clone();
+                                            println!("[api_client] Calling prediction API for dataset {}", dataset_id);
+
+                                            // Call API with retry logic
+                                            match api_client_clone.predict(request).await {
+                                                Ok(response) => {
+                                                    println!(
+                                                        "[api_client] Prediction successful: {}",
+                                                        response.probability
+                                                    );
+                                                    let _ = app_clone.emit(
+                                                        "serial:prediction_result",
+                                                        &response,
+                                                    );
+                                                }
+                                                Err(err) => {
+                                                    println!(
+                                                        "[api_client] Prediction failed: {}",
+                                                        err
+                                                    );
+                                                    let _ = app_clone.emit(
+                                                        "serial:prediction_error",
+                                                        &PredictionError {
+                                                            error: err,
+                                                            dataset_id: Some(dataset_id),
+                                                        },
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        Err(err) => {
+                                            println!("[api_client] Failed to create prediction request: {}", err);
+                                            let _ = app_clone.emit(
+                                                "serial:prediction_error",
+                                                &PredictionError {
+                                                    error: format!(
+                                                        "Failed to parse CSV data: {}",
+                                                        err
+                                                    ),
+                                                    dataset_id: None,
+                                                },
+                                            );
+                                        }
+                                    }
+                                });
+
                                 buffer.clear();
                                 last_data_at = None;
+                                data_start_at = None;
                             }
                         }
 
@@ -150,14 +251,86 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
                             if !present {
                                 // Treat disconnect as end-of-dataset too
                                 if !buffer.is_empty() {
+                                    let collection_duration_ms = data_start_at
+                                        .map(|start| start.elapsed().as_millis() as u64)
+                                        .unwrap_or(0);
+
                                     println!(
-                                        "[serial {}] csv dataset complete ({} bytes):\n{}",
+                                        "[serial {}] csv dataset complete on disconnect ({} bytes)",
                                         target_port,
-                                        buffer.as_bytes().len(),
-                                        buffer
+                                        buffer.as_bytes().len()
                                     );
+
+                                    // Call prediction API
+                                    let csv_data = buffer.clone();
+                                    let app_clone = app.clone();
+                                    let port_clone = target_port.clone();
+                                    let api_client_clone = api_client.clone();
+
+                                    tauri::async_runtime::spawn(async move {
+                                        // Emit loading state
+                                        let _ = app_clone.emit(
+                                            "serial:prediction_loading",
+                                            &PredictionLoading {
+                                                loading: true,
+                                                dataset_id: None,
+                                            },
+                                        );
+
+                                        // Create prediction request
+                                        match create_prediction_request(
+                                            &csv_data,
+                                            port_clone.clone(),
+                                            baud_rate,
+                                            collection_duration_ms,
+                                        ) {
+                                            Ok(request) => {
+                                                let dataset_id = request.dataset_id.clone();
+                                                println!("[api_client] Calling prediction API for dataset {}", dataset_id);
+
+                                                // Call API with retry logic
+                                                match api_client_clone.predict(request).await {
+                                                    Ok(response) => {
+                                                        println!("[api_client] Prediction successful: {}", response.probability);
+                                                        let _ = app_clone.emit(
+                                                            "serial:prediction_result",
+                                                            &response,
+                                                        );
+                                                    }
+                                                    Err(err) => {
+                                                        println!(
+                                                            "[api_client] Prediction failed: {}",
+                                                            err
+                                                        );
+                                                        let _ = app_clone.emit(
+                                                            "serial:prediction_error",
+                                                            &PredictionError {
+                                                                error: err,
+                                                                dataset_id: Some(dataset_id),
+                                                            },
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            Err(err) => {
+                                                println!("[api_client] Failed to create prediction request: {}", err);
+                                                let _ = app_clone.emit(
+                                                    "serial:prediction_error",
+                                                    &PredictionError {
+                                                        error: format!(
+                                                            "Failed to parse CSV data: {}",
+                                                            err
+                                                        ),
+                                                        dataset_id: None,
+                                                    },
+                                                );
+                                            }
+                                        }
+                                    });
+
                                     buffer.clear();
                                     last_data_at = None;
+                                    data_start_at = None;
                                 }
                                 println!("[serial] device on {} disconnected", target_port);
                                 // notify frontend of disconnection status
