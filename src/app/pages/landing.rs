@@ -1,3 +1,4 @@
+use crate::app::components::{DataFlowDiagram, DeviceStatusCard, PlatformGrid, StatsDashboard};
 use crate::app::Page;
 use leptos::prelude::*;
 
@@ -7,35 +8,43 @@ pub fn HomePage(
     on_navigate_to_results: WriteSignal<Page>,
 ) -> impl IntoView {
     view! {
-        <h1>"Welcome Foothold Labs!"</h1>
+        <div class="animate-fade-in">
+            // Header Section
+            <header style="text-align: center; margin-bottom: 3rem;">
+                <div class="row" style="margin-bottom: 1.5rem;">
+                    <a href="https://footholdlabs.com/" target="_blank">
+                        <img
+                            src="https://media.licdn.com/dms/image/v2/C4E0BAQGTcebEYz_Hvg/company-logo_200_200/company-logo_200_200/0/1630569533433/foothold_labs_logo?e=1761782400&v=beta&t=6psnH45OQow8ZyMB9rjFBets4mI8M9KG5C7c8NEYnJs"
+                            class="logo tauri"
+                            alt="Foothold Labs logo"
+                            style="max-width: 120px; height: auto;"
+                        />
+                    </a>
+                </div>
+                <h1 style="font-size: 2.5rem; font-weight: 300; color: var(--color-text-primary); margin: 0; letter-spacing: -0.02em;">
+                    "Serial Data Platform"
+                </h1>
+                <p style="color: var(--color-text-secondary); margin-top: 0.75rem; font-size: 1.125rem;">
+                    "Real-time data acquisition and analysis"
+                </p>
+            </header>
 
-        <div class="row">
-            <a href="https://footholdlabs.com/" target="_blank">
-                <img src="https://media.licdn.com/dms/image/v2/C4E0BAQGTcebEYz_Hvg/company-logo_200_200/company-logo_200_200/0/1630569533433/foothold_labs_logo?e=1761782400&v=beta&t=6psnH45OQow8ZyMB9rjFBets4mI8M9KG5C7c8NEYnJs" class="logo tauri" alt="Foothold Labs logo"/>
-            </a>
-        </div>
 
-        <div class="device-status">
-            <h2>"Device Status"</h2>
-            <p class="status-text">
-                <strong>"Device: "</strong>
-                <span class={move || if connected.get() { "status-connected" } else { "status-disconnected" }}>
-                    { move || if connected.get() { "Connected" } else { "Disconnected" } }
-                </span>
-            </p>
 
-            <Show when=move || connected.get()>
-                <button
-                    class="read-results-btn"
-                    on:click=move |_| on_navigate_to_results.set(Page::Results)
-                >
-                    "Read Results"
-                </button>
-            </Show>
+            // Device Status Card
+            <DeviceStatusCard
+                connected=connected
+                on_navigate_to_results=on_navigate_to_results
+            />
 
-            <Show when=move || !connected.get()>
-                <p class="connection-message">"Please connect a device to read results."</p>
-            </Show>
+            // Stats Dashboard
+            <StatsDashboard connected=connected />
+
+
+            // Footer Info
+            <div class="results-info" style="margin-top: 3rem; text-align: center;">
+                <p>"Powered by Vertec Colossus "</p>
+            </div>
         </div>
     }
 }

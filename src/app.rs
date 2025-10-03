@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
+mod components;
 mod pages;
 mod serial;
 
