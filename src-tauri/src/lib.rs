@@ -5,6 +5,8 @@ use serde::Serialize;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
+
+#[cfg(desktop)]
 use tauri_plugin_serialplugin::{commands, desktop_api};
 fn try_load_dotenv() {
     // Load only from repo root .env (relative to src-tauri)
@@ -48,6 +50,7 @@ struct PredictionError {
     dataset_id: Option<String>,
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 async fn start_serial(app: AppHandle) -> Result<(), String> {
     // Load .env if present and read config
@@ -356,10 +359,17 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_serialplugin::init())
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        builder = builder
+            .plugin(tauri_plugin_serialplugin::init())
+            .invoke_handler(tauri::generate_handler![start_serial]);
+    }
+
+    builder
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![start_serial])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

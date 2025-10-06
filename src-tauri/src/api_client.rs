@@ -189,15 +189,16 @@ pub fn parse_csv_data(csv_buffer: &str) -> Result<Vec<DataPoint>, String> {
             ));
         }
 
-        let index = parts[0]
-            .trim()
-            .parse::<u32>()
-            .map_err(|e| format!("Invalid index at line {}: {}", line_num + 1, e))?;
-
-        let timestamp = parts[1]
+        // Parse based on actual data format: timestamp,index,value
+        let timestamp = parts[0]
             .trim()
             .parse::<f64>()
             .map_err(|e| format!("Invalid timestamp at line {}: {}", line_num + 1, e))?;
+
+        let index = parts[1]
+            .trim()
+            .parse::<u32>()
+            .map_err(|e| format!("Invalid index at line {}: {}", line_num + 1, e))?;
 
         let value = parts[2]
             .trim()
