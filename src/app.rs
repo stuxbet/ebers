@@ -5,13 +5,14 @@ mod components;
 mod pages;
 mod serial;
 
-use pages::{HomePage, ResultsPage};
+use pages::{HomePage, PredictionsPage, ResultsPage};
 use serial::initialize_serial;
 
 #[derive(Clone, PartialEq)]
 pub enum Page {
     Home,
     Results,
+    Predictions,
 }
 
 #[component]
@@ -53,6 +54,11 @@ pub fn App() -> impl IntoView {
                         prediction_loading=prediction_loading
                         prediction_result=prediction_result
                         prediction_error=prediction_error
+                    />
+                }.into_any(),
+                Page::Predictions => view! {
+                    <PredictionsPage
+                        on_navigate_to_home=set_current_page
                     />
                 }.into_any(),
             }}

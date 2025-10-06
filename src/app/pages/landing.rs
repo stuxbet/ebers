@@ -1,4 +1,4 @@
-use crate::app::components::{DataFlowDiagram, DeviceStatusCard, PlatformGrid, StatsDashboard};
+use crate::app::components::{DeviceStatusCard, StatsDashboard};
 use crate::app::Page;
 use leptos::prelude::*;
 
@@ -40,6 +40,16 @@ pub fn HomePage(
             // Stats Dashboard
             <StatsDashboard connected=connected />
 
+            // Predictions History Button
+            <div style="margin-top: 2rem; text-align: center;">
+                <button
+                    class="button"
+                    on:click=move |_| on_navigate_to_results.set(Page::Predictions)
+                    style="padding: 0.75rem 1.5rem; font-size: 1rem;"
+                >
+                    "📊 View Prediction History"
+                </button>
+            </div>
 
             // Footer Info
             <div class="results-info" style="margin-top: 3rem; text-align: center;">

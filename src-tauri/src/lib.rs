@@ -206,6 +206,8 @@ async fn handle_prediction_api_call(
     collection_duration_ms: u64,
     api_client: PredictionApiClient,
 ) {
+    use chrono::Utc;
+
     // Emit loading state
     let _ = app.emit(
         "serial:prediction_loading",
@@ -224,6 +226,37 @@ async fn handle_prediction_api_call(
                 dataset_id
             );
 
+            // Create a pending prediction record
+            let mut prediction_record = PredictionRecord {
+                id: None,
+                uuid: dataset_id.clone(),
+                port: port.clone(),
+                baud_rate: baud_rate as i32,
+                collection_duration_ms: collection_duration_ms as i64,
+                prediction_result: None,
+                confidence: None,
+                raw_response: None,
+                status: "pending".to_string(),
+                error_message: None,
+                created_at: Utc::now().to_rfc3339(),
+                updated_at: Utc::now().to_rfc3339(),
+            };
+
+            // Get database pool from app state
+            let db_state = app.state::<db::DbState>();
+            let pool = db_state.lock().await;
+
+            // Insert pending record
+            match Database::insert_prediction(&*pool, &prediction_record).await {
+                Ok(id) => {
+                    println!("[database] Inserted pending prediction with id: {}", id);
+                    prediction_record.id = Some(id);
+                }
+                Err(e) => {
+                    println!("[database] Failed to insert pending prediction: {}", e);
+                }
+            }
+
             // Call API with retry logic
             match api_client.predict(request).await {
                 Ok(response) => {
@@ -231,10 +264,37 @@ async fn handle_prediction_api_call(
                         "[api_client] Prediction successful: {}",
                         response.probability
                     );
+
+                    // Update prediction record with success
+                    prediction_record.prediction_result =
+                        Some(format!("Probability: {}", response.probability));
+                    prediction_record.confidence = response.confidence;
+                    prediction_record.raw_response = serde_json::to_string(&response).ok();
+                    prediction_record.status = "success".to_string();
+                    prediction_record.updated_at = Utc::now().to_rfc3339();
+
+                    // Update in database
+                    match Database::update_prediction(&*pool, &prediction_record).await {
+                        Ok(_) => println!("[database] Updated prediction to success"),
+                        Err(e) => println!("[database] Failed to update prediction: {}", e),
+                    }
+
                     let _ = app.emit("serial:prediction_result", &response);
                 }
                 Err(err) => {
                     println!("[api_client] Prediction failed: {}", err);
+
+                    // Update prediction record with error
+                    prediction_record.status = "error".to_string();
+                    prediction_record.error_message = Some(err.clone());
+                    prediction_record.updated_at = Utc::now().to_rfc3339();
+
+                    // Update in database
+                    match Database::update_prediction(&*pool, &prediction_record).await {
+                        Ok(_) => println!("[database] Updated prediction to error"),
+                        Err(e) => println!("[database] Failed to update prediction: {}", e),
+                    }
+
                     let _ = app.emit(
                         "serial:prediction_error",
                         &PredictionError {
@@ -434,8 +494,14 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
 async fn get_all_predictions(
     db_state: State<'_, db::DbState>,
 ) -> Result<Vec<PredictionRecord>, String> {
+    println!("get_all_predictions command called");
     let pool = db_state.lock().await;
-    Database::get_all_predictions(&*pool).await
+    let result = Database::get_all_predictions(&*pool).await;
+    match &result {
+        Ok(preds) => println!("Successfully fetched {} predictions", preds.len()),
+        Err(e) => println!("Error fetching predictions: {}", e),
+    }
+    result
 }
 
 #[tauri::command]
@@ -454,6 +520,34 @@ async fn get_predictions_by_status(
 ) -> Result<Vec<PredictionRecord>, String> {
     let pool = db_state.lock().await;
     Database::get_predictions_by_status(&*pool, &status).await
+}
+
+// Test command to insert sample data
+#[tauri::command]
+async fn insert_test_prediction(db_state: State<'_, db::DbState>) -> Result<String, String> {
+    use chrono::Utc;
+
+    println!("insert_test_prediction command called");
+    let pool = db_state.lock().await;
+
+    let test_record = PredictionRecord {
+        id: None,
+        uuid: uuid::Uuid::new_v4().to_string(),
+        port: "COM3".to_string(),
+        baud_rate: 9600,
+        collection_duration_ms: 5000,
+        prediction_result: Some("Test Result - Sample Prediction".to_string()),
+        confidence: Some(0.95),
+        raw_response: Some(r#"{"probability": 0.95, "confidence": 0.95}"#.to_string()),
+        status: "success".to_string(),
+        error_message: None,
+        created_at: Utc::now().to_rfc3339(),
+        updated_at: Utc::now().to_rfc3339(),
+    };
+
+    let id = Database::insert_prediction(&*pool, &test_record).await?;
+    println!("Inserted test prediction with id: {}", id);
+    Ok(format!("Inserted test prediction with id: {}", id))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -566,7 +660,8 @@ pub fn run() {
                 start_serial,
                 get_all_predictions,
                 get_prediction_by_uuid,
-                get_predictions_by_status
+                get_predictions_by_status,
+                insert_test_prediction
             ]);
     }
 
