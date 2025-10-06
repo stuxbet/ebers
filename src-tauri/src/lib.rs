@@ -1,10 +1,12 @@
 mod api_client;
+mod db;
 
 use api_client::{create_prediction_request, PredictionApiClient};
+use db::{Database, PredictionRecord};
 use serde::Serialize;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 #[cfg(desktop)]
 use tauri_plugin_serialplugin::{commands, desktop_api};
@@ -427,6 +429,33 @@ async fn start_serial(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// Database commands
+#[tauri::command]
+async fn get_all_predictions(
+    db_state: State<'_, db::DbState>,
+) -> Result<Vec<PredictionRecord>, String> {
+    let pool = db_state.lock().await;
+    Database::get_all_predictions(&*pool).await
+}
+
+#[tauri::command]
+async fn get_prediction_by_uuid(
+    db_state: State<'_, db::DbState>,
+    uuid: String,
+) -> Result<Option<PredictionRecord>, String> {
+    let pool = db_state.lock().await;
+    Database::get_prediction_by_uuid(&*pool, &uuid).await
+}
+
+#[tauri::command]
+async fn get_predictions_by_status(
+    db_state: State<'_, db::DbState>,
+    status: String,
+) -> Result<Vec<PredictionRecord>, String> {
+    let pool = db_state.lock().await;
+    Database::get_predictions_by_status(&*pool, &status).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -435,7 +464,119 @@ pub fn run() {
     {
         builder = builder
             .plugin(tauri_plugin_serialplugin::init())
-            .invoke_handler(tauri::generate_handler![start_serial]);
+            .plugin(
+                tauri_plugin_sql::Builder::default()
+                    .add_migrations(
+                        "sqlite:ebers.db",
+                        vec![
+                            // Migration 1: Create initial tables
+                            tauri_plugin_sql::Migration {
+                                version: 1,
+                                description: "create_initial_tables",
+                                sql: "CREATE TABLE IF NOT EXISTS predictions (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    uuid TEXT NOT NULL UNIQUE,
+                                    port TEXT NOT NULL,
+                                    baud_rate INTEGER NOT NULL,
+                                    collection_duration_ms INTEGER NOT NULL,
+                                    prediction_result TEXT,
+                                    confidence REAL,
+                                    raw_response TEXT,
+                                    status TEXT NOT NULL,
+                                    error_message TEXT,
+                                    created_at TEXT NOT NULL,
+                                    updated_at TEXT NOT NULL
+                                );
+                                CREATE INDEX IF NOT EXISTS idx_predictions_uuid ON predictions(uuid);
+                                CREATE INDEX IF NOT EXISTS idx_predictions_created_at ON predictions(created_at);
+                                CREATE INDEX IF NOT EXISTS idx_predictions_status ON predictions(status);",
+                                kind: tauri_plugin_sql::MigrationKind::Up,
+                            },
+                        ],
+                    )
+                    .build(),
+            )
+            .setup(|app| {
+                // Initialize the database pool
+                tauri::async_runtime::block_on(async {
+                    use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+                    use std::str::FromStr;
+
+                    let db_path = app.path().app_data_dir()
+                        .expect("Failed to get app data dir")
+                        .join("ebers.db");
+
+                    // Create parent directory if it doesn't exist
+                    if let Some(parent) = db_path.parent() {
+                        std::fs::create_dir_all(parent).expect("Failed to create app data directory");
+                    }
+
+                    let options = SqliteConnectOptions::from_str(&format!("sqlite:{}", db_path.display()))
+                        .expect("Failed to create SQLite options")
+                        .create_if_missing(true);
+
+                    let pool = SqlitePoolOptions::new()
+                        .max_connections(5)
+                        .connect_with(options)
+                        .await
+                        .expect("Failed to connect to database");
+
+                    // Run migrations
+                    sqlx::query(
+                        "CREATE TABLE IF NOT EXISTS predictions (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            uuid TEXT NOT NULL UNIQUE,
+                            port TEXT NOT NULL,
+                            baud_rate INTEGER NOT NULL,
+                            collection_duration_ms INTEGER NOT NULL,
+                            prediction_result TEXT,
+                            confidence REAL,
+                            raw_response TEXT,
+                            status TEXT NOT NULL,
+                            error_message TEXT,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL
+                        );",
+                    )
+                    .execute(&pool)
+                    .await
+                    .expect("Failed to create predictions table");
+
+                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_predictions_uuid ON predictions(uuid);")
+                        .execute(&pool)
+                        .await
+                        .expect("Failed to create uuid index");
+
+                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_predictions_created_at ON predictions(created_at);")
+                        .execute(&pool)
+                        .await
+                        .expect("Failed to create created_at index");
+
+                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_predictions_status ON predictions(status);")
+                        .execute(&pool)
+                        .await
+                        .expect("Failed to create status index");
+
+                    app.manage(tokio::sync::Mutex::new(pool));
+                });
+
+                Ok(())
+            })
+            .invoke_handler(tauri::generate_handler![
+                start_serial,
+                get_all_predictions,
+                get_prediction_by_uuid,
+                get_predictions_by_status
+            ]);
+    }
+
+    #[cfg(not(desktop))]
+    {
+        builder = builder.invoke_handler(tauri::generate_handler![
+            get_all_predictions,
+            get_prediction_by_uuid,
+            get_predictions_by_status
+        ]);
     }
 
     builder
