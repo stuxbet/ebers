@@ -408,6 +408,10 @@ async fn run_serial_monitor_loop(
                 }
             }
         }
+
+        // Yield to the async runtime to allow other tasks (like API calls) to run
+        // This prevents the serial loop from starving other async tasks
+        tokio::task::yield_now().await;
     }
 }
 
