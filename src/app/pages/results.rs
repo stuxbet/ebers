@@ -161,7 +161,7 @@ pub fn ResultsPage(
                                     view! {
                                         <div style="text-align: center;">
                                             <div style="margin-bottom: 2rem;">
-                                                <div style="font-size: 4rem; font-weight: 700; color: var(--color-primary); line-height: 1;">
+                                                <div style="font-size: 4rem; font-weight: 700; color: var(--color-text-primary); line-height: 1;">
                                                     {format!("{:.0}%", probability_percent)}
                                                 </div>
                                                 <div style="color: var(--color-text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">

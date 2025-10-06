@@ -270,7 +270,7 @@ fn PredictionCard(prediction: PredictionRecord) -> impl IntoView {
                     <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                         "Port"
                     </div>
-                    <div style="font-weight: 500;">
+                    <div style="font-weight: 500; color: var(--color-text-primary);">
                         {prediction.port.clone()}
                     </div>
                 </div>
@@ -278,7 +278,7 @@ fn PredictionCard(prediction: PredictionRecord) -> impl IntoView {
                     <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                         "Baud Rate"
                     </div>
-                    <div style="font-weight: 500;">
+                    <div style="font-weight: 500; color: var(--color-text-primary);">
                         {format!("{}", prediction.baud_rate)}
                     </div>
                 </div>
@@ -286,7 +286,7 @@ fn PredictionCard(prediction: PredictionRecord) -> impl IntoView {
                     <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                         "Duration"
                     </div>
-                    <div style="font-weight: 500;">
+                    <div style="font-weight: 500; color: var(--color-text-primary);">
                         {format!("{}ms", prediction.collection_duration_ms)}
                     </div>
                 </div>
@@ -296,7 +296,7 @@ fn PredictionCard(prediction: PredictionRecord) -> impl IntoView {
                             <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                                 "Confidence"
                             </div>
-                            <div style="font-weight: 500;">
+                            <div style="font-weight: 500; color: var(--color-text-primary);">
                                 {format!("{:.2}%", conf * 100.0)}
                             </div>
                         </div>
@@ -310,7 +310,7 @@ fn PredictionCard(prediction: PredictionRecord) -> impl IntoView {
                         <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                             "Prediction Result"
                         </div>
-                        <div style="padding: 0.75rem; background-color: var(--color-bg-secondary); border-radius: 6px; font-family: monospace; font-size: 0.875rem;">
+                        <div style="padding: 0.75rem; background-color: var(--color-bg-secondary); border-radius: 6px; font-family: monospace; font-size: 0.875rem; color: var(--color-text-primary);">
                             {result.clone()}
                         </div>
                     </div>
