@@ -5,7 +5,8 @@ mod components;
 mod pages;
 mod serial;
 
-use pages::{DetectionsPage, HomePage, ResultsPage};
+use components::ProfileMenu;
+use pages::{DetectionsPage, HomePage, ResultsPage, SettingsPage};
 use serial::initialize_serial;
 
 #[derive(Clone, PartialEq)]
@@ -13,6 +14,7 @@ pub enum Page {
     Home,
     Results,
     Detections,
+    Settings,
 }
 
 #[component]
@@ -40,6 +42,11 @@ pub fn App() -> impl IntoView {
 
     view! {
         <main class="container">
+            // Profile menu in top right corner
+            <div class="profile-menu-wrapper">
+                <ProfileMenu on_navigate=set_current_page />
+            </div>
+
             {move || match current_page.get() {
                 Page::Home => view! {
                     <HomePage
@@ -58,6 +65,11 @@ pub fn App() -> impl IntoView {
                 }.into_any(),
                 Page::Detections => view! {
                     <DetectionsPage
+                        on_navigate_to_home=set_current_page
+                    />
+                }.into_any(),
+                Page::Settings => view! {
+                    <SettingsPage
                         on_navigate_to_home=set_current_page
                     />
                 }.into_any(),

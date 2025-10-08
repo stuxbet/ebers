@@ -603,6 +603,130 @@ button:focus-visible {
   transform: scaleX(1);
 }
 
+/* Profile Menu Styles */
+.profile-menu-wrapper {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+.profile-menu-container {
+  position: relative;
+}
+
+.profile-button {
+  padding: 0.5rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.profile-button:hover {
+  background-color: var(--color-bg-tertiary);
+  transform: scale(1.05);
+}
+
+.profile-button:active {
+  transform: scale(0.95);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  min-width: 200px;
+  overflow: hidden;
+  animation: dropdown-fade-in 0.2s ease;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  transition: background-color 0.15s ease;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-bg-secondary);
+  box-shadow: none;
+}
+
+.dropdown-item:active {
+  transform: none;
+}
+
+.dropdown-icon {
+  font-size: 1.125rem;
+}
+
+/* Settings Page Styles */
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.settings-item:last-child {
+  margin-bottom: 0;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 2rem 0;
+}
+
+.toggle-placeholder {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  background: var(--color-bg-tertiary);
+}
+
 /* Smooth Page Transitions */
 @keyframes pageTransition {
   from {
