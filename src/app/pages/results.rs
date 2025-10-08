@@ -1,4 +1,4 @@
-use crate::app::serial::PredictionData;
+use crate::app::serial::DetectionData;
 use crate::app::Page;
 use leptos::prelude::*;
 
@@ -6,9 +6,9 @@ use leptos::prelude::*;
 pub fn ResultsPage(
     latest_serial: ReadSignal<String>,
     on_navigate_to_home: WriteSignal<Page>,
-    prediction_loading: ReadSignal<bool>,
-    prediction_result: ReadSignal<Option<PredictionData>>,
-    prediction_error: ReadSignal<Option<String>>,
+    detection_loading: ReadSignal<bool>,
+    detection_result: ReadSignal<Option<DetectionData>>,
+    detection_error: ReadSignal<Option<String>>,
 ) -> impl IntoView {
     let has_data = move || !latest_serial.get().is_empty();
 
@@ -113,34 +113,34 @@ pub fn ResultsPage(
 
                 </div>
 
-                // Prediction Results Card
+                // Detection Results Card
                 <div class="card card-elevated animate-fade-in" style="margin-top: 2rem; animation-delay: 400ms;">
-                    <div class="asset-header" style="margin-bottom: 1.5rem;">"AI PREDICTION"</div>
+                    <div class="asset-header" style="margin-bottom: 1.5rem;">"AI DETECTION"</div>
 
                     <Show
-                        when=move || prediction_loading.get()
+                        when=move || detection_loading.get()
                         fallback=move || view! {
                             <Show
-                                when=move || prediction_result.get().is_some()
+                                when=move || detection_result.get().is_some()
                                 fallback=move || view! {
                                     <Show
-                                        when=move || prediction_error.get().is_some()
+                                        when=move || detection_error.get().is_some()
                                         fallback=|| view! {
                                             <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
                                                 <p>"Waiting for data to be processed..."</p>
                                                 <p style="font-size: 0.875rem; margin-top: 0.5rem;">
-                                                    "Predictions will appear here after data collection is complete."
+                                                    "Detections will appear here after data collection is complete."
                                                 </p>
                                             </div>
                                         }
                                     >
                                         {move || {
-                                            let error = prediction_error.get().unwrap_or_default();
+                                            let error = detection_error.get().unwrap_or_default();
                                             view! {
                                                 <div style="padding: 1.5rem; background-color: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
                                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                                         <span style="font-size: 1.5rem;">"⚠️"</span>
-                                                        <span style="font-weight: 600; color: #ef4444;">"Prediction Error"</span>
+                                                        <span style="font-weight: 600; color: #ef4444;">"Detection Error"</span>
                                                     </div>
                                                     <p style="color: var(--color-text-secondary); margin: 0;">
                                                         {error}
@@ -152,7 +152,7 @@ pub fn ResultsPage(
                                 }
                             >
                                 {move || {
-                                    let result = prediction_result.get().unwrap();
+                                    let result = detection_result.get().unwrap();
                                     let probability_percent = (result.probability * 100.0).round();
                                     let confidence_display = result.confidence
                                         .map(|c| format!("{:.1}%", c * 100.0))
@@ -165,7 +165,7 @@ pub fn ResultsPage(
                                                     {format!("{:.0}%", probability_percent)}
                                                 </div>
                                                 <div style="color: var(--color-text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">
-                                                    "Prediction Probability"
+                                                    "Detection Probability"
                                                 </div>
                                             </div>
 
@@ -198,7 +198,7 @@ pub fn ResultsPage(
                                 "⏳"
                             </div>
                             <p style="color: var(--color-text-secondary); font-weight: 500;">
-                                "Processing prediction..."
+                                "Processing detection..."
                             </p>
                             <p style="color: var(--color-text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">
                                 "This may take a moment. The API will retry up to 3 times if needed."

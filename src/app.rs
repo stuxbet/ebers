@@ -5,14 +5,14 @@ mod components;
 mod pages;
 mod serial;
 
-use pages::{HomePage, PredictionsPage, ResultsPage};
+use pages::{DetectionsPage, HomePage, ResultsPage};
 use serial::initialize_serial;
 
 #[derive(Clone, PartialEq)]
 pub enum Page {
     Home,
     Results,
-    Predictions,
+    Detections,
 }
 
 #[component]
@@ -21,19 +21,19 @@ pub fn App() -> impl IntoView {
     let (latest_serial, set_latest_serial) = signal(String::new());
     let (connected, set_connected) = signal(false);
 
-    // Prediction state
-    let (prediction_loading, set_prediction_loading) = signal(false);
-    let (prediction_result, set_prediction_result) = signal(None::<serial::PredictionData>);
-    let (prediction_error, set_prediction_error) = signal(None::<String>);
+    // Detection state
+    let (detection_loading, set_detection_loading) = signal(false);
+    let (detection_result, set_detection_result) = signal(None::<serial::DetectionData>);
+    let (detection_error, set_detection_error) = signal(None::<String>);
 
     // Initialize serial communication
     spawn_local(async move {
         initialize_serial(
             set_latest_serial,
             set_connected,
-            set_prediction_loading,
-            set_prediction_result,
-            set_prediction_error,
+            set_detection_loading,
+            set_detection_result,
+            set_detection_error,
         )
         .await;
     });
@@ -51,13 +51,13 @@ pub fn App() -> impl IntoView {
                     <ResultsPage
                         latest_serial=latest_serial
                         on_navigate_to_home=set_current_page
-                        prediction_loading=prediction_loading
-                        prediction_result=prediction_result
-                        prediction_error=prediction_error
+                        detection_loading=detection_loading
+                        detection_result=detection_result
+                        detection_error=detection_error
                     />
                 }.into_any(),
-                Page::Predictions => view! {
-                    <PredictionsPage
+                Page::Detections => view! {
+                    <DetectionsPage
                         on_navigate_to_home=set_current_page
                     />
                 }.into_any(),

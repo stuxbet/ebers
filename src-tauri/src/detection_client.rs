@@ -17,9 +17,9 @@ pub struct DatasetMetadata {
     pub collection_duration_ms: u64,
 }
 
-/// Request payload sent to the prediction API
+/// Request payload sent to the detection API
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PredictionRequest {
+pub struct DetectionRequest {
     pub dataset_id: String,
     pub timestamp: String,
     pub row_count: usize,
@@ -34,9 +34,9 @@ pub struct ResponseMetadata {
     pub processing_time_ms: Option<u64>,
 }
 
-/// Successful response from the prediction API
+/// Successful response from the detection API
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PredictionResponse {
+pub struct DetectionResponse {
     pub success: bool,
     pub dataset_id: String,
     pub probability: f64,
@@ -53,26 +53,26 @@ pub struct ApiErrorDetails {
     pub details: Option<String>,
 }
 
-/// Error response from the prediction API
+/// Error response from the detection API
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PredictionErrorResponse {
+pub struct DetectionErrorResponse {
     pub success: bool,
     pub error: ApiErrorDetails,
 }
 
-/// Result type for prediction operations
-pub type PredictionResult = Result<PredictionResponse, String>;
+/// Result type for detection operations
+pub type DetectionResult = Result<DetectionResponse, String>;
 
-/// API client for making prediction requests
+/// API client for making detection requests
 #[derive(Clone)]
-pub struct PredictionApiClient {
+pub struct DetectionApiClient {
     endpoint: String,
     client: reqwest::Client,
     max_retries: u32,
     timeout: Duration,
 }
 
-impl PredictionApiClient {
+impl DetectionApiClient {
     /// Create a new API client with the given endpoint
     pub fn new(endpoint: String) -> Self {
         let client = reqwest::Client::builder()
@@ -88,20 +88,20 @@ impl PredictionApiClient {
         }
     }
 
-    /// Make a prediction request with retry logic
-    pub async fn predict(&self, request: PredictionRequest) -> PredictionResult {
+    /// Make a detection request with retry logic
+    pub async fn detect(&self, request: DetectionRequest) -> DetectionResult {
         let mut last_error = String::new();
 
         for attempt in 1..=self.max_retries {
             println!(
-                "[api_client] Attempt {}/{} to call prediction API",
+                "[api_client] Attempt {}/{} to call detection API",
                 attempt, self.max_retries
             );
 
             match self.make_request(&request).await {
                 Ok(response) => {
                     println!(
-                        "[api_client] Prediction successful: probability={}",
+                        "[api_client] Detection successful: probability={}",
                         response.probability
                     );
                     return Ok(response);
@@ -127,7 +127,7 @@ impl PredictionApiClient {
     }
 
     /// Make a single HTTP request to the API
-    async fn make_request(&self, request: &PredictionRequest) -> PredictionResult {
+    async fn make_request(&self, request: &DetectionRequest) -> DetectionResult {
         // Make the POST request
         let response = self
             .client
@@ -149,16 +149,16 @@ impl PredictionApiClient {
 
         // Handle successful response (200-299)
         if status.is_success() {
-            let prediction = response
-                .json::<PredictionResponse>()
+            let detection = response
+                .json::<DetectionResponse>()
                 .await
                 .map_err(|e| format!("Failed to parse API response: {}", e))?;
 
-            return Ok(prediction);
+            return Ok(detection);
         }
 
         // Handle error responses (4xx, 5xx)
-        if let Ok(error_response) = response.json::<PredictionErrorResponse>().await {
+        if let Ok(error_response) = response.json::<DetectionErrorResponse>().await {
             return Err(format!(
                 "API error [{}]: {}",
                 error_response.error.code, error_response.error.message
@@ -219,20 +219,20 @@ pub fn parse_csv_data(csv_buffer: &str) -> Result<Vec<DataPoint>, String> {
     Ok(data_points)
 }
 
-/// Create a prediction request from CSV data
-pub fn create_prediction_request(
+/// Create a detection request from CSV data
+pub fn create_detection_request(
     csv_buffer: &str,
     port: String,
     baud_rate: u32,
     collection_duration_ms: u64,
-) -> Result<PredictionRequest, String> {
+) -> Result<DetectionRequest, String> {
     let data = parse_csv_data(csv_buffer)?;
     let row_count = data.len();
 
     let dataset_id = uuid::Uuid::new_v4().to_string();
     let timestamp = chrono::Utc::now().to_rfc3339();
 
-    Ok(PredictionRequest {
+    Ok(DetectionRequest {
         dataset_id,
         timestamp,
         row_count,

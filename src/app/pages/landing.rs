@@ -40,14 +40,14 @@ pub fn HomePage(
             // Stats Dashboard
             <StatsDashboard connected=connected />
 
-            // Predictions History Button
+            // Detections History Button
             <div style="margin-top: 2rem; text-align: center;">
                 <button
                     class="button"
-                    on:click=move |_| on_navigate_to_results.set(Page::Predictions)
+                    on:click=move |_| on_navigate_to_results.set(Page::Detections)
                     style="padding: 0.75rem 1.5rem; font-size: 1rem;"
                 >
-                    "📊 View Prediction History"
+                    "📊 View Detection History"
                 </button>
             </div>
 
