@@ -65,6 +65,16 @@ pub fn run() {
                                 CREATE INDEX IF NOT EXISTS idx_detections_status ON detections(status);",
                                 kind: tauri_plugin_sql::MigrationKind::Up,
                             },
+                            // Migration 2: Create settings table
+                            tauri_plugin_sql::Migration {
+                                version: 2,
+                                description: "create_settings_table",
+                                sql: "CREATE TABLE IF NOT EXISTS settings (
+                                    key TEXT PRIMARY KEY,
+                                    value TEXT NOT NULL
+                                );",
+                                kind: tauri_plugin_sql::MigrationKind::Up,
+                            },
                         ],
                     )
                     .build(),
@@ -130,6 +140,17 @@ pub fn run() {
                         .await
                         .expect("Failed to create status index");
 
+                    // Create settings table
+                    sqlx::query(
+                        "CREATE TABLE IF NOT EXISTS settings (
+                            key TEXT PRIMARY KEY,
+                            value TEXT NOT NULL
+                        );"
+                    )
+                    .execute(&pool)
+                    .await
+                    .expect("Failed to create settings table");
+
                     app.manage(tokio::sync::Mutex::new(pool));
                 });
 
@@ -137,10 +158,15 @@ pub fn run() {
             })
             .invoke_handler(tauri::generate_handler![
                 serial_handler::start_serial,
+                serial_handler::list_serial_ports,
+                serial_handler::get_current_port,
+                serial_handler::set_serial_port,
                 commands::get_all_detections,
                 commands::get_detection_by_uuid,
                 commands::get_detections_by_status,
-                commands::insert_test_detection
+                commands::insert_test_detection,
+                commands::save_setting,
+                commands::get_setting
             ]);
     }
 

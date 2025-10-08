@@ -1,6 +1,38 @@
 use crate::models::{Database, DbState, DetectionRecord};
 use tauri::State;
 
+// Settings commands
+#[tauri::command]
+pub async fn save_setting(
+    db_state: State<'_, DbState>,
+    key: String,
+    value: String,
+) -> Result<(), String> {
+    let pool = db_state.lock().await;
+    sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
+        .bind(&key)
+        .bind(&value)
+        .execute(&*pool)
+        .await
+        .map_err(|e| format!("Failed to save setting: {}", e))?;
+    println!("Saved setting: {} = {}", key, value);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn get_setting(
+    db_state: State<'_, DbState>,
+    key: String,
+) -> Result<Option<String>, String> {
+    let pool = db_state.lock().await;
+    let result: Option<(String,)> = sqlx::query_as("SELECT value FROM settings WHERE key = ?")
+        .bind(&key)
+        .fetch_optional(&*pool)
+        .await
+        .map_err(|e| format!("Failed to get setting: {}", e))?;
+    Ok(result.map(|(v,)| v))
+}
+
 // Database commands
 #[tauri::command]
 pub async fn get_all_detections(
