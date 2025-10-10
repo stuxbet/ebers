@@ -7,7 +7,7 @@ pub fn TestResultsPage(
     detection_result: ReadSignal<Option<crate::app::serial::DetectionData>>,
 ) -> impl IntoView {
     let on_new_test = move |_| {
-        on_navigate.set(Page::TestStart);
+        on_navigate.set(Page::Landing);
     };
 
     let on_view_history = move |_| {

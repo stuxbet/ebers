@@ -7,27 +7,24 @@ mod serial;
 
 use components::ProfileMenu;
 use pages::{
-    DetectionsPage, HomePage, PatientFormPage, ResultsPage, SettingsPage, TestReadingPage,
-    TestResultsPage, TestStartPage,
+    DetectionsPage, LandingPage, PatientFormPage, SettingsPage, TestReadingPage, TestResultsPage,
 };
 use serial::initialize_serial;
 
 #[derive(Clone, PartialEq)]
 pub enum Page {
-    TestStart,
+    Landing,
     PatientForm,
     TestReading,
     TestResults,
-    Home,
-    Results,
-    History, // Renamed from Detections
+    History,
     Settings,
 }
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (current_page, set_current_page) = signal(Page::TestStart);
-    let (latest_serial, set_latest_serial) = signal(String::new());
+    let (current_page, set_current_page) = signal(Page::Landing);
+    let (_latest_serial, set_latest_serial) = signal(String::new());
     let (connected, set_connected) = signal(false);
 
     // Detection state
@@ -55,8 +52,8 @@ pub fn App() -> impl IntoView {
             </div>
 
             {move || match current_page.get() {
-                Page::TestStart => view! {
-                    <TestStartPage
+                Page::Landing => view! {
+                    <LandingPage
                         on_navigate=set_current_page
                     />
                 }.into_any(),
@@ -78,21 +75,6 @@ pub fn App() -> impl IntoView {
                     <TestResultsPage
                         on_navigate=set_current_page
                         detection_result=detection_result
-                    />
-                }.into_any(),
-                Page::Home => view! {
-                    <HomePage
-                        connected=connected
-                        on_navigate_to_results=set_current_page
-                    />
-                }.into_any(),
-                Page::Results => view! {
-                    <ResultsPage
-                        latest_serial=latest_serial
-                        on_navigate_to_home=set_current_page
-                        detection_loading=detection_loading
-                        detection_result=detection_result
-                        detection_error=detection_error
                     />
                 }.into_any(),
                 Page::History => view! {

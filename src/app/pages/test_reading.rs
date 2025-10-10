@@ -19,7 +19,7 @@ pub fn TestReadingPage(
 
     let on_cancel = move |_| {
         // TODO: Cancel the test and clean up
-        on_navigate.set(Page::TestStart);
+        on_navigate.set(Page::Landing);
     };
 
     view! {
@@ -184,7 +184,7 @@ pub fn TestReadingPage(
 
                 // Loading Spinner (when actively processing)
                 {move || {
-                    if (connected.get() && !detection_loading.get() && detection_result.get().is_none() && detection_error.get().is_none()) 
+                    if (connected.get() && !detection_loading.get() && detection_result.get().is_none() && detection_error.get().is_none())
                         || detection_loading.get() {
                         view! {
                             <div style="margin: 2rem 0;">
@@ -237,4 +237,3 @@ pub fn TestReadingPage(
         </div>
     }
 }
-

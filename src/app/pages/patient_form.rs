@@ -2,9 +2,7 @@ use crate::app::Page;
 use leptos::prelude::*;
 
 #[component]
-pub fn PatientFormPage(
-    on_navigate: WriteSignal<Page>,
-) -> impl IntoView {
+pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
     // Form state
     let (first_name, set_first_name) = signal(String::new());
     let (last_name, set_last_name) = signal(String::new());
@@ -23,7 +21,7 @@ pub fn PatientFormPage(
     };
 
     let on_cancel = move |_| {
-        on_navigate.set(Page::TestStart);
+        on_navigate.set(Page::Landing);
     };
 
     view! {
@@ -217,4 +215,3 @@ pub fn PatientFormPage(
         </div>
     }
 }
-

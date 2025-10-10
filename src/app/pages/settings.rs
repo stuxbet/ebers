@@ -109,7 +109,7 @@ pub fn SettingsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
                     <button
                         class="button"
-                        on:click=move |_| on_navigate_to_home.set(Page::TestStart)
+                        on:click=move |_| on_navigate_to_home.set(Page::Landing)
                         style="padding: 0.5rem 1rem;"
                     >
                         "← Back to Home"
