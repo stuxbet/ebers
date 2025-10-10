@@ -3,14 +3,31 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-/// Detection record from the database
+/// Patient record from the database
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DetectionRecord {
+pub struct Patient {
     pub id: Option<i64>,
     pub uuid: String,
-    pub port: String,
-    pub baud_rate: i32,
-    pub collection_duration_ms: i64,
+    pub first_name: String,
+    pub last_name: String,
+    pub date_of_birth: Option<String>,
+    pub patient_id_number: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Test record from the database
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Test {
+    pub id: Option<i64>,
+    pub uuid: String,
+    pub patient_id: i64,
+    pub test_type: String,
+    pub device_id: Option<String>,
+    pub firmware_version: Option<String>,
     pub detection_result: Option<String>,
     pub confidence: Option<f64>,
     pub raw_response: Option<String>,
@@ -18,6 +35,14 @@ pub struct DetectionRecord {
     pub error_message: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    pub completed_at: Option<String>,
+}
+
+/// Test with patient information
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TestWithPatient {
+    pub test: Test,
+    pub patient: Patient,
 }
 
 #[wasm_bindgen]
@@ -28,37 +53,37 @@ extern "C" {
 
 #[component]
 pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
-    let (detections, set_detections) = signal(Vec::<DetectionRecord>::new());
+    let (tests, set_tests) = signal(Vec::<TestWithPatient>::new());
     let (loading, set_loading) = signal(true);
     let (error, set_error) = signal(None::<String>);
     let (filter_status, set_filter_status) = signal(String::from("all"));
 
-    // Function to load detections
-    let load_detections = move || {
+    // Function to load tests
+    let load_tests = move || {
         leptos::task::spawn_local(async move {
             use leptos::web_sys::console;
 
             set_loading.set(true);
             set_error.set(None);
 
-            console::log_1(&JsValue::from_str("Fetching detections from database..."));
+            console::log_1(&JsValue::from_str("Fetching tests from database..."));
 
-            match invoke("get_all_detections", JsValue::NULL).await {
+            match invoke("get_all_tests", JsValue::NULL).await {
                 Ok(result) => {
                     console::log_1(&JsValue::from_str("Received result from backend"));
                     console::log_1(&result);
 
-                    match serde_wasm_bindgen::from_value::<Vec<DetectionRecord>>(result) {
-                        Ok(detects) => {
+                    match serde_wasm_bindgen::from_value::<Vec<TestWithPatient>>(result) {
+                        Ok(test_list) => {
                             console::log_1(&JsValue::from_str(&format!(
-                                "Successfully parsed {} detections",
-                                detects.len()
+                                "Successfully parsed {} tests",
+                                test_list.len()
                             )));
-                            set_detections.set(detects);
+                            set_tests.set(test_list);
                             set_loading.set(false);
                         }
                         Err(e) => {
-                            let error_msg = format!("Failed to parse detections: {:?}", e);
+                            let error_msg = format!("Failed to parse tests: {:?}", e);
                             console::log_1(&JsValue::from_str(&error_msg));
                             set_error.set(Some(error_msg));
                             set_loading.set(false);
@@ -66,7 +91,7 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                     }
                 }
                 Err(e) => {
-                    let error_msg = format!("Failed to load detections: {:?}", e);
+                    let error_msg = format!("Failed to load tests: {:?}", e);
                     console::log_1(&JsValue::from_str(&error_msg));
                     set_error.set(Some(error_msg));
                     set_loading.set(false);
@@ -75,46 +100,22 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
         });
     };
 
-    // Load detections on mount
+    // Load tests on mount
     Effect::new(move || {
-        load_detections();
+        load_tests();
     });
 
-    // Handler to insert test data
-    let insert_test = move |_| {
-        leptos::task::spawn_local(async move {
-            use leptos::web_sys::console;
-
-            console::log_1(&JsValue::from_str("Inserting test detection..."));
-
-            match invoke("insert_test_detection", JsValue::NULL).await {
-                Ok(result) => {
-                    console::log_1(&JsValue::from_str("Test detection inserted"));
-                    console::log_1(&result);
-                    // Reload detections
-                    load_detections();
-                }
-                Err(e) => {
-                    console::log_1(&JsValue::from_str(&format!(
-                        "Failed to insert test: {:?}",
-                        e
-                    )));
-                }
-            }
-        });
-    };
-
-    // Filtered detections based on status
-    let filtered_detections = move || {
+    // Filtered tests based on status
+    let filtered_tests = move || {
         let filter = filter_status.get();
-        let all_detects = detections.get();
+        let all_tests = tests.get();
 
         if filter == "all" {
-            all_detects
+            all_tests
         } else {
-            all_detects
+            all_tests
                 .into_iter()
-                .filter(|d| d.status == filter)
+                .filter(|t| t.test.status == filter)
                 .collect()
         }
     };
@@ -134,22 +135,13 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                     <h1 style="margin: 0; font-size: 2rem; font-weight: 300;">
                         "Test History"
                     </h1>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button
-                            class="button"
-                            on:click=move |_| load_detections()
-                            style="padding: 0.5rem 1rem;"
-                        >
-                            "🔄 Refresh"
-                        </button>
-                        <button
-                            class="button"
-                            on:click=insert_test
-                            style="padding: 0.5rem 1rem; background-color: var(--color-success);"
-                        >
-                            "➕ Add Test"
-                        </button>
-                    </div>
+                    <button
+                        class="button"
+                        on:click=move |_| load_tests()
+                        style="padding: 0.5rem 1rem;"
+                    >
+                        "🔄 Refresh"
+                    </button>
                 </div>
 
                 // Filter buttons
@@ -161,10 +153,16 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                         "All"
                     </button>
                     <button
-                        class=move || if filter_status.get() == "success" { "button button-primary" } else { "button" }
-                        on:click=move |_| set_filter_status.set("success".to_string())
+                        class=move || if filter_status.get() == "completed" { "button button-primary" } else { "button" }
+                        on:click=move |_| set_filter_status.set("completed".to_string())
                     >
-                        "Success"
+                        "Completed"
+                    </button>
+                    <button
+                        class=move || if filter_status.get() == "in_progress" { "button button-primary" } else { "button" }
+                        on:click=move |_| set_filter_status.set("in_progress".to_string())
+                    >
+                        "In Progress"
                     </button>
                     <button
                         class=move || if filter_status.get() == "pending" { "button button-primary" } else { "button" }
@@ -185,7 +183,7 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
             {move || if loading.get() {
                 view! {
                     <div style="text-align: center; padding: 3rem;">
-                        <p>"Loading detections..."</p>
+                        <p>"Loading tests..."</p>
                     </div>
                 }.into_any()
             } else if let Some(err) = error.get() {
@@ -197,13 +195,13 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                     </div>
                 }.into_any()
             } else {
-                // Detections list
-                let detects = filtered_detections();
-                if detects.is_empty() {
+                // Tests list
+                let test_list = filtered_tests();
+                if test_list.is_empty() {
                     view! {
                         <div style="text-align: center; padding: 3rem;">
                             <p style="color: var(--color-text-secondary);">
-                                "No detections found"
+                                "No tests found"
                             </p>
                         </div>
                     }.into_any()
@@ -211,11 +209,11 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                     view! {
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <div style="color: var(--color-text-secondary); font-size: 0.875rem;">
-                                {format!("Showing {} detection(s)", detects.len())}
+                                {format!("Showing {} test(s)", test_list.len())}
                             </div>
-                            {detects.into_iter().map(|detect| {
+                            {test_list.into_iter().map(|test_with_patient| {
                                 view! {
-                                    <DetectionCard detection=detect />
+                                    <TestCard test_with_patient=test_with_patient />
                                 }
                             }).collect_view()}
                         </div>
@@ -227,97 +225,169 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
 }
 
 #[component]
-fn DetectionCard(detection: DetectionRecord) -> impl IntoView {
-    let status_color = match detection.status.as_str() {
-        "success" => "var(--color-success)",
+fn TestCard(test_with_patient: TestWithPatient) -> impl IntoView {
+    let test = test_with_patient.test;
+    let patient = test_with_patient.patient;
+
+    let status_color = match test.status.as_str() {
+        "completed" => "var(--color-success)",
         "error" => "var(--color-error)",
+        "in_progress" => "var(--color-info)",
         "pending" => "var(--color-warning)",
         _ => "var(--color-text-secondary)",
     };
 
-    let status_bg = match detection.status.as_str() {
-        "success" => "var(--color-success-bg)",
+    let status_bg = match test.status.as_str() {
+        "completed" => "var(--color-success-bg)",
         "error" => "var(--color-error-bg)",
+        "in_progress" => "var(--color-info-bg)",
         "pending" => "var(--color-warning-bg)",
+        _ => "var(--color-bg-secondary)",
+    };
+
+    let result_color = match test.detection_result.as_deref() {
+        Some("positive") => "var(--color-error)",
+        Some("negative") => "var(--color-success)",
+        Some("inconclusive") => "var(--color-warning)",
+        _ => "var(--color-text-secondary)",
+    };
+
+    let result_bg = match test.detection_result.as_deref() {
+        Some("positive") => "var(--color-error-bg)",
+        Some("negative") => "var(--color-success-bg)",
+        Some("inconclusive") => "var(--color-warning-bg)",
         _ => "var(--color-bg-secondary)",
     };
 
     view! {
         <div class="card" style="padding: 1.5rem;">
+            // Header with patient info and status
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                        <span
-                            style=format!(
-                                "display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; background-color: {}; color: {};",
-                                status_bg, status_color
-                            )
-                        >
-                            {detection.status.clone()}
-                        </span>
-                        <span style="color: var(--color-text-secondary); font-size: 0.875rem;">
-                            {format_timestamp(&detection.created_at)}
-                        </span>
-                    </div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; font-weight: 500;">
+                        {format!("{} {}", patient.first_name, patient.last_name)}
+                    </h3>
+                    {patient.patient_id_number.as_ref().map(|id| {
+                        view! {
+                            <div style="color: var(--color-text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">
+                                {format!("Patient ID: {}", id)}
+                            </div>
+                        }
+                    })}
                     <div style="font-family: monospace; font-size: 0.75rem; color: var(--color-text-secondary);">
-                        {format!("ID: {}", detection.uuid)}
+                        {format!("Test ID: {}", test.uuid)}
                     </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                    <span
+                        style=format!(
+                            "display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; background-color: {}; color: {};",
+                            status_bg, status_color
+                        )
+                    >
+                        {test.status.clone()}
+                    </span>
+                    <span style="color: var(--color-text-secondary); font-size: 0.875rem;">
+                        {format_timestamp(&test.created_at)}
+                    </span>
                 </div>
             </div>
 
+            // Test information grid
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
                 <div>
                     <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                        "Port"
+                        "Test Type"
                     </div>
-                    <div style="font-weight: 500; color: var(--color-text-primary);">
-                        {detection.port.clone()}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                        "Baud Rate"
-                    </div>
-                    <div style="font-weight: 500; color: var(--color-text-primary);">
-                        {format!("{}", detection.baud_rate)}
+                    <div style="font-weight: 500; color: var(--color-text-primary); text-transform: capitalize;">
+                        {test.test_type.clone()}
                     </div>
                 </div>
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                        "Duration"
-                    </div>
-                    <div style="font-weight: 500; color: var(--color-text-primary);">
-                        {format!("{}ms", detection.collection_duration_ms)}
-                    </div>
-                </div>
-                {detection.confidence.map(|conf| {
+                {patient.date_of_birth.as_ref().map(|dob| {
+                    view! {
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                "Date of Birth"
+                            </div>
+                            <div style="font-weight: 500; color: var(--color-text-primary);">
+                                {dob.clone()}
+                            </div>
+                        </div>
+                    }
+                })}
+                {test.device_id.as_ref().map(|device| {
+                    view! {
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                "Device ID"
+                            </div>
+                            <div style="font-weight: 500; color: var(--color-text-primary);">
+                                {device.clone()}
+                            </div>
+                        </div>
+                    }
+                })}
+                {test.firmware_version.as_ref().map(|fw| {
+                    view! {
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                "Firmware"
+                            </div>
+                            <div style="font-weight: 500; color: var(--color-text-primary);">
+                                {fw.clone()}
+                            </div>
+                        </div>
+                    }
+                })}
+                {test.confidence.map(|conf| {
                     view! {
                         <div>
                             <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
                                 "Confidence"
                             </div>
                             <div style="font-weight: 500; color: var(--color-text-primary);">
-                                {format!("{:.2}%", conf * 100.0)}
+                                {format!("{:.1}%", conf * 100.0)}
                             </div>
                         </div>
                     }
                 })}
             </div>
 
-            {detection.detection_result.as_ref().map(|result| {
+            // Detection result (if available)
+            {test.detection_result.as_ref().map(|result| {
                 view! {
                     <div style="margin-bottom: 1rem;">
-                        <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                        <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">
                             "Detection Result"
                         </div>
-                        <div style="padding: 0.75rem; background-color: var(--color-bg-secondary); border-radius: 6px; font-family: monospace; font-size: 0.875rem; color: var(--color-text-primary);">
+                        <div
+                            style=format!(
+                                "padding: 1rem; border-radius: 8px; font-weight: 600; text-transform: uppercase; text-align: center; background-color: {}; color: {};",
+                                result_bg, result_color
+                            )
+                        >
                             {result.clone()}
                         </div>
                     </div>
                 }
             })}
 
-            {detection.error_message.as_ref().map(|error| {
+            // Raw response (if available)
+            {test.raw_response.as_ref().map(|response| {
+                view! {
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.75rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                            "Raw Response"
+                        </div>
+                        <div style="padding: 0.75rem; background-color: var(--color-bg-secondary); border-radius: 6px; font-family: monospace; font-size: 0.875rem; color: var(--color-text-primary); max-height: 200px; overflow-y: auto;">
+                            {response.clone()}
+                        </div>
+                    </div>
+                }
+            })}
+
+            // Error message (if any)
+            {test.error_message.as_ref().map(|error| {
                 view! {
                     <div>
                         <div style="font-size: 0.75rem; color: var(--color-error); margin-bottom: 0.25rem;">
