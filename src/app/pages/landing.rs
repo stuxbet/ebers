@@ -44,10 +44,10 @@ pub fn HomePage(
             <div style="margin-top: 2rem; text-align: center;">
                 <button
                     class="button"
-                    on:click=move |_| on_navigate_to_results.set(Page::Detections)
+                    on:click=move |_| on_navigate_to_results.set(Page::History)
                     style="padding: 0.75rem 1.5rem; font-size: 1rem;"
                 >
-                    "📊 View Detection History"
+                    "📊 View Test History"
                 </button>
             </div>
 

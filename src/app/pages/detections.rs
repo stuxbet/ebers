@@ -126,13 +126,13 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
                     <button
                         class="button"
-                        on:click=move |_| on_navigate_to_home.set(Page::Home)
+                        on:click=move |_| on_navigate_to_home.set(Page::TestStart)
                         style="padding: 0.5rem 1rem;"
                     >
                         "← Back to Home"
                     </button>
                     <h1 style="margin: 0; font-size: 2rem; font-weight: 300;">
-                        "Detection History"
+                        "Test History"
                     </h1>
                     <div style="display: flex; gap: 0.5rem;">
                         <button
