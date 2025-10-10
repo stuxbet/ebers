@@ -1,5 +1,4 @@
 mod commands;
-mod db_init;
 mod db_operations;
 mod detection_client;
 mod migrations;
@@ -46,16 +45,33 @@ pub fn run() {
                     .build(),
             )
             .setup(|app| {
-                // Initialize the database pool
+                // Connect to the database that tauri-plugin-sql created and migrated
                 tauri::async_runtime::block_on(async {
+                    use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+                    use std::str::FromStr;
+
                     let app_data_dir = app
                         .path()
                         .app_data_dir()
                         .expect("Failed to get app data dir");
 
-                    let pool = db_init::initialize_database(app_data_dir)
+                    let db_path = app_data_dir.join("ebers.db");
+
+                    println!("📁 Database path: {}", db_path.display());
+
+                    // Connect to the same database that tauri-plugin-sql manages
+                    let options =
+                        SqliteConnectOptions::from_str(&format!("sqlite:{}", db_path.display()))
+                            .expect("Failed to create SQLite options")
+                            .create_if_missing(true);
+
+                    let pool = SqlitePoolOptions::new()
+                        .max_connections(5)
+                        .connect_with(options)
                         .await
-                        .expect("Failed to initialize database");
+                        .expect("Failed to connect to database");
+
+                    println!("✅ Connected to database pool for Rust commands");
 
                     app.manage(tokio::sync::Mutex::new(pool));
                 });
