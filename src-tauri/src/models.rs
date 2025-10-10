@@ -1,11 +1,11 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqlitePool;
+use sea_orm::DatabaseConnection;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
 /// Type alias for the database pool state
-pub type DbState = Mutex<SqlitePool>;
+pub type DbState = Mutex<DatabaseConnection>;
 
 // ============================================================================
 // PATIENT MODEL
@@ -123,15 +123,22 @@ impl std::fmt::Display for TestStatus {
 
 /// Type of test being performed
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
 pub enum TestType {
+    #[serde(rename = "covid-19")]
     Covid19,
+    #[serde(rename = "influenza-ab")]
     InfluenzaAB,
+    #[serde(rename = "strep-a")]
     StrepA,
+    #[serde(rename = "rsv")]
     Rsv,
+    #[serde(rename = "malaria")]
     Malaria,
+    #[serde(rename = "hiv")]
     Hiv,
+    #[serde(rename = "hepatitis")]
     Hepatitis,
+    #[serde(rename = "other")]
     Other(String),
 }
 

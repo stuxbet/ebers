@@ -28,6 +28,7 @@ chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["time"] }
 tauri-plugin-sql = { version = "2.3.0", features = ["sqlite"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "sqlite"] }
+sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 
 # Desktop-only dependencies (not available on Android/iOS)
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

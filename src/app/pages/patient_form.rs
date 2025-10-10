@@ -1,5 +1,54 @@
 use crate::app::Page;
 use leptos::prelude::*;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(catch, js_namespace = ["window", "__TAURI__", "core"])]
+    async fn invoke(cmd: &str, args: JsValue) -> Result<JsValue, JsValue>;
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreatePatientArgs {
+    patient_data: CreatePatientRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CreatePatientRequest {
+    first_name: String,
+    last_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    date_of_birth: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    patient_id_number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    notes: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Patient {
+    uuid: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateTestArgs {
+    test_data: CreateTestRequest,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CreateTestRequest {
+    patient_uuid: String,
+    test_type: String,
+    device_id: Option<String>,
+    firmware_version: Option<String>,
+}
 
 #[component]
 pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
@@ -11,13 +60,131 @@ pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
     let (email, set_email) = signal(String::new());
     let (phone, set_phone) = signal(String::new());
     let (notes, set_notes) = signal(String::new());
-    let (test_type, set_test_type) = signal(String::from("COVID-19"));
+    let (test_type, set_test_type) = signal(String::from("covid-19"));
+
+    let (submitting, set_submitting) = signal(false);
+    let (error, set_error) = signal(None::<String>);
 
     // Handle form submission
     let on_submit = move |_| {
-        // TODO: Create patient and test records in database
-        // For now, just navigate to test reading page
-        on_navigate.set(Page::TestReading);
+        let first = first_name.get();
+        let last = last_name.get();
+        let dob = date_of_birth.get();
+        let pid = patient_id_number.get();
+        let em = email.get();
+        let ph = phone.get();
+        let nt = notes.get();
+        let tt = test_type.get();
+
+        leptos::task::spawn_local(async move {
+            use leptos::web_sys::console;
+
+            set_submitting.set(true);
+            set_error.set(None);
+
+            // Create patient
+            let patient_request = CreatePatientRequest {
+                first_name: first.clone(),
+                last_name: last.clone(),
+                date_of_birth: if dob.is_empty() {
+                    None
+                } else {
+                    Some(dob.clone())
+                },
+                patient_id_number: if pid.is_empty() {
+                    None
+                } else {
+                    Some(pid.clone())
+                },
+                email: if em.is_empty() {
+                    None
+                } else {
+                    Some(em.clone())
+                },
+                phone: if ph.is_empty() {
+                    None
+                } else {
+                    Some(ph.clone())
+                },
+                notes: if nt.is_empty() {
+                    None
+                } else {
+                    Some(nt.clone())
+                },
+            };
+
+            console::log_1(&JsValue::from_str("Creating patient..."));
+
+            let args = CreatePatientArgs {
+                patient_data: patient_request,
+            };
+
+            match invoke(
+                "create_patient",
+                serde_wasm_bindgen::to_value(&args).unwrap(),
+            )
+            .await
+            {
+                Ok(patient_result) => {
+                    console::log_1(&JsValue::from_str("Patient created successfully"));
+
+                    // Parse patient to get UUID
+                    match serde_wasm_bindgen::from_value::<Patient>(patient_result) {
+                        Ok(patient) => {
+                            console::log_1(&JsValue::from_str(&format!(
+                                "Patient UUID: {}",
+                                patient.uuid
+                            )));
+
+                            // Create test
+                            let test_request = CreateTestRequest {
+                                patient_uuid: patient.uuid,
+                                test_type: tt.clone(),
+                                device_id: None,
+                                firmware_version: None,
+                            };
+
+                            console::log_1(&JsValue::from_str("Creating test..."));
+
+                            let test_args = CreateTestArgs {
+                                test_data: test_request,
+                            };
+
+                            match invoke(
+                                "create_test",
+                                serde_wasm_bindgen::to_value(&test_args).unwrap(),
+                            )
+                            .await
+                            {
+                                Ok(_) => {
+                                    console::log_1(&JsValue::from_str("Test created successfully"));
+                                    set_submitting.set(false);
+                                    on_navigate.set(Page::TestReading);
+                                }
+                                Err(e) => {
+                                    let error_msg = format!("Failed to create test: {:?}", e);
+                                    console::log_1(&JsValue::from_str(&error_msg));
+                                    set_error.set(Some(error_msg));
+                                    set_submitting.set(false);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            let error_msg = format!("Failed to parse patient: {:?}", e);
+                            console::log_1(&JsValue::from_str(&error_msg));
+                            set_error.set(Some(error_msg));
+                            set_submitting.set(false);
+                        }
+                    }
+                }
+                Err(e) => {
+                    let error_msg = format!("Failed to create patient: {:?}", e);
+                    console::log_1(&JsValue::from_str(&error_msg));
+                    set_error.set(Some(error_msg));
+                    set_submitting.set(false);
+                }
+            }
+        });
     };
 
     let on_cancel = move |_| {
@@ -180,17 +347,23 @@ pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                                 prop:value=move || test_type.get()
                                 on:change=move |e| set_test_type.set(event_target_value(&e))
                             >
-                                <option value="COVID-19">"COVID-19"</option>
-                                <option value="Influenza A/B">"Influenza A/B"</option>
-                                <option value="Strep A">"Strep A"</option>
-                                <option value="RSV">"RSV (Respiratory Syncytial Virus)"</option>
-                                <option value="Malaria">"Malaria"</option>
-                                <option value="HIV">"HIV"</option>
-                                <option value="Hepatitis">"Hepatitis"</option>
-                                <option value="Other">"Other"</option>
+                                <option value="covid-19">"COVID-19"</option>
+                                <option value="influenza-ab">"Influenza A/B"</option>
+                                <option value="strep-a">"Strep A"</option>
+                                <option value="rsv">"RSV (Respiratory Syncytial Virus)"</option>
+                                <option value="malaria">"Malaria"</option>
+                                <option value="hiv">"HIV"</option>
+                                <option value="hepatitis">"Hepatitis"</option>
                             </select>
                         </div>
                     </div>
+
+                    // Error Message
+                    {move || error.get().map(|err| view! {
+                        <div style="padding: 1rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: rgb(239, 68, 68); margin-bottom: 1rem;">
+                            {err}
+                        </div>
+                    })}
 
                     // Action Buttons
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--color-border-light);">
@@ -198,6 +371,7 @@ pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                             type="button"
                             class="button"
                             on:click=on_cancel
+                            disabled=move || submitting.get()
                             style="padding: 0.75rem 1.5rem; background-color: var(--color-bg-tertiary); color: var(--color-text-primary);"
                         >
                             "Cancel"
@@ -205,9 +379,14 @@ pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                         <button
                             type="submit"
                             class="button"
+                            disabled=move || submitting.get()
                             style="padding: 0.75rem 2rem; background-color: var(--color-accent-primary); color: white; font-weight: 500;"
                         >
-                            "Start Test →"
+                            {move || if submitting.get() {
+                                "Creating..."
+                            } else {
+                                "Start Test →"
+                            }}
                         </button>
                     </div>
                 </form>

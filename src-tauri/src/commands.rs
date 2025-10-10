@@ -1,4 +1,4 @@
-use crate::db_operations::Database;
+use crate::db_orm::Database;
 use crate::models::{
     DbState, DetectionResult, Patient, Test, TestStatus, TestType, TestWithPatient,
 };
@@ -17,13 +17,8 @@ pub async fn save_setting(
     key: String,
     value: String,
 ) -> Result<(), String> {
-    let pool = db_state.lock().await;
-    sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
-        .bind(&key)
-        .bind(&value)
-        .execute(&*pool)
-        .await
-        .map_err(|e| format!("Failed to save setting: {}", e))?;
+    let db = db_state.lock().await;
+    Database::save_setting(&*db, key.clone(), value.clone()).await?;
     println!("Saved setting: {} = {}", key, value);
     Ok(())
 }
@@ -33,13 +28,8 @@ pub async fn get_setting(
     db_state: State<'_, DbState>,
     key: String,
 ) -> Result<Option<String>, String> {
-    let pool = db_state.lock().await;
-    let result: Option<(String,)> = sqlx::query_as("SELECT value FROM settings WHERE key = ?")
-        .bind(&key)
-        .fetch_optional(&*pool)
-        .await
-        .map_err(|e| format!("Failed to get setting: {}", e))?;
-    Ok(result.map(|(v,)| v))
+    let db = db_state.lock().await;
+    Database::get_setting(&*db, key).await
 }
 
 // ============================================================================
@@ -50,11 +40,15 @@ pub async fn get_setting(
 pub struct CreatePatientRequest {
     pub first_name: String,
     pub last_name: String,
-    #[serde(deserialize_with = "deserialize_optional_date")]
+    #[serde(default, deserialize_with = "deserialize_optional_date")]
     pub date_of_birth: Option<NaiveDate>,
+    #[serde(default)]
     pub patient_id_number: Option<String>,
+    #[serde(default)]
     pub email: Option<String>,
+    #[serde(default)]
     pub phone: Option<String>,
+    #[serde(default)]
     pub notes: Option<String>,
 }
 

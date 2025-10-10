@@ -1,3 +1,4 @@
+use crate::db_orm::Database;
 use crate::detection_client::{create_detection_request, DetectionApiClient};
 use crate::models::DbState;
 use serde::Serialize;
@@ -103,15 +104,11 @@ async fn load_serial_config_async(app: &AppHandle) -> SerialConfig {
 
     // Try to get port from database first
     let port = if let Some(db_state) = app.try_state::<DbState>() {
-        let pool = db_state.lock().await;
-        let result: Option<(String,)> =
-            sqlx::query_as("SELECT value FROM settings WHERE key = 'serial_port'")
-                .fetch_optional(&*pool)
-                .await
-                .ok()
-                .flatten();
-
-        result.map(|(v,)| v)
+        let db = db_state.lock().await;
+        Database::get_setting(&*db, "serial_port".to_string())
+            .await
+            .ok()
+            .flatten()
     } else {
         None
     };
@@ -470,15 +467,11 @@ pub async fn list_serial_ports(app: AppHandle) -> Result<Vec<String>, String> {
 pub async fn get_current_port(app: AppHandle) -> Result<String, String> {
     // Try to get from database first
     let db_state = app.state::<DbState>();
-    let pool = db_state.lock().await;
+    let db = db_state.lock().await;
 
-    let result: Option<(String,)> =
-        sqlx::query_as("SELECT value FROM settings WHERE key = 'serial_port'")
-            .fetch_optional(&*pool)
-            .await
-            .map_err(|e| format!("Failed to get setting: {}", e))?;
+    let result = Database::get_setting(&*db, "serial_port".to_string()).await?;
 
-    if let Some((port,)) = result {
+    if let Some(port) = result {
         Ok(port)
     } else {
         // Fall back to env var or default
@@ -495,14 +488,9 @@ pub async fn set_serial_port(app: AppHandle, port: String) -> Result<(), String>
 
     // Save to database
     let db_state = app.state::<DbState>();
-    let pool = db_state.lock().await;
+    let db = db_state.lock().await;
 
-    sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
-        .bind("serial_port")
-        .bind(&port)
-        .execute(&*pool)
-        .await
-        .map_err(|e| format!("Failed to save port setting: {}", e))?;
+    Database::save_setting(&*db, "serial_port".to_string(), port.clone()).await?;
 
     println!("[serial] Port setting saved to database");
 

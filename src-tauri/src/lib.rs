@@ -1,6 +1,7 @@
 mod commands;
-mod db_operations;
+mod db_orm;
 mod detection_client;
+mod entities;
 mod migrations;
 mod models;
 mod serial_handler;
@@ -47,8 +48,7 @@ pub fn run() {
             .setup(|app| {
                 // Connect to the database that tauri-plugin-sql created and migrated
                 tauri::async_runtime::block_on(async {
-                    use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-                    use std::str::FromStr;
+                    use sea_orm::{ConnectOptions, Database as SeaDatabase};
 
                     let app_data_dir = app
                         .path()
@@ -60,20 +60,20 @@ pub fn run() {
                     println!("📁 Database path: {}", db_path.display());
 
                     // Connect to the same database that tauri-plugin-sql manages
-                    let options =
-                        SqliteConnectOptions::from_str(&format!("sqlite:{}", db_path.display()))
-                            .expect("Failed to create SQLite options")
-                            .create_if_missing(true);
+                    let database_url = format!("sqlite://{}?mode=rwc", db_path.display());
 
-                    let pool = SqlitePoolOptions::new()
-                        .max_connections(5)
-                        .connect_with(options)
+                    let mut opt = ConnectOptions::new(database_url);
+                    opt.max_connections(5)
+                        .min_connections(1)
+                        .sqlx_logging(false);
+
+                    let db = SeaDatabase::connect(opt)
                         .await
                         .expect("Failed to connect to database");
 
-                    println!("✅ Connected to database pool for Rust commands");
+                    println!("✅ Connected to database via SeaORM");
 
-                    app.manage(tokio::sync::Mutex::new(pool));
+                    app.manage(tokio::sync::Mutex::new(db));
                 });
 
                 Ok(())
