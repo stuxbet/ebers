@@ -1,5 +1,8 @@
 mod commands;
+mod db_init;
+mod db_operations;
 mod detection_client;
+mod migrations;
 mod models;
 mod serial_handler;
 
@@ -39,117 +42,20 @@ pub fn run() {
             .plugin(tauri_plugin_serialplugin::init())
             .plugin(
                 tauri_plugin_sql::Builder::default()
-                    .add_migrations(
-                        "sqlite:ebers.db",
-                        vec![
-                            // Migration 1: Create initial tables
-                            tauri_plugin_sql::Migration {
-                                version: 1,
-                                description: "create_initial_tables",
-                                sql: "CREATE TABLE IF NOT EXISTS detections (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    uuid TEXT NOT NULL UNIQUE,
-                                    port TEXT NOT NULL,
-                                    baud_rate INTEGER NOT NULL,
-                                    collection_duration_ms INTEGER NOT NULL,
-                                    detection_result TEXT,
-                                    confidence REAL,
-                                    raw_response TEXT,
-                                    status TEXT NOT NULL,
-                                    error_message TEXT,
-                                    created_at TEXT NOT NULL,
-                                    updated_at TEXT NOT NULL
-                                );
-                                CREATE INDEX IF NOT EXISTS idx_detections_uuid ON detections(uuid);
-                                CREATE INDEX IF NOT EXISTS idx_detections_created_at ON detections(created_at);
-                                CREATE INDEX IF NOT EXISTS idx_detections_status ON detections(status);",
-                                kind: tauri_plugin_sql::MigrationKind::Up,
-                            },
-                            // Migration 2: Create settings table
-                            tauri_plugin_sql::Migration {
-                                version: 2,
-                                description: "create_settings_table",
-                                sql: "CREATE TABLE IF NOT EXISTS settings (
-                                    key TEXT PRIMARY KEY,
-                                    value TEXT NOT NULL
-                                );",
-                                kind: tauri_plugin_sql::MigrationKind::Up,
-                            },
-                        ],
-                    )
+                    .add_migrations("sqlite:ebers.db", migrations::get_migrations())
                     .build(),
             )
             .setup(|app| {
                 // Initialize the database pool
                 tauri::async_runtime::block_on(async {
-                    use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-                    use std::str::FromStr;
+                    let app_data_dir = app
+                        .path()
+                        .app_data_dir()
+                        .expect("Failed to get app data dir");
 
-                    let db_path = app.path().app_data_dir()
-                        .expect("Failed to get app data dir")
-                        .join("ebers.db");
-
-                    // Create parent directory if it doesn't exist
-                    if let Some(parent) = db_path.parent() {
-                        std::fs::create_dir_all(parent).expect("Failed to create app data directory");
-                    }
-
-                    let options = SqliteConnectOptions::from_str(&format!("sqlite:{}", db_path.display()))
-                        .expect("Failed to create SQLite options")
-                        .create_if_missing(true);
-
-                    let pool = SqlitePoolOptions::new()
-                        .max_connections(5)
-                        .connect_with(options)
+                    let pool = db_init::initialize_database(app_data_dir)
                         .await
-                        .expect("Failed to connect to database");
-
-                    // Run migrations
-                    sqlx::query(
-                        "CREATE TABLE IF NOT EXISTS detections (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            uuid TEXT NOT NULL UNIQUE,
-                            port TEXT NOT NULL,
-                            baud_rate INTEGER NOT NULL,
-                            collection_duration_ms INTEGER NOT NULL,
-                            detection_result TEXT,
-                            confidence REAL,
-                            raw_response TEXT,
-                            status TEXT NOT NULL,
-                            error_message TEXT,
-                            created_at TEXT NOT NULL,
-                            updated_at TEXT NOT NULL
-                        );",
-                    )
-                    .execute(&pool)
-                    .await
-                    .expect("Failed to create detections table");
-
-                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_detections_uuid ON detections(uuid);")
-                        .execute(&pool)
-                        .await
-                        .expect("Failed to create uuid index");
-
-                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_detections_created_at ON detections(created_at);")
-                        .execute(&pool)
-                        .await
-                        .expect("Failed to create created_at index");
-
-                    sqlx::query("CREATE INDEX IF NOT EXISTS idx_detections_status ON detections(status);")
-                        .execute(&pool)
-                        .await
-                        .expect("Failed to create status index");
-
-                    // Create settings table
-                    sqlx::query(
-                        "CREATE TABLE IF NOT EXISTS settings (
-                            key TEXT PRIMARY KEY,
-                            value TEXT NOT NULL
-                        );"
-                    )
-                    .execute(&pool)
-                    .await
-                    .expect("Failed to create settings table");
+                        .expect("Failed to initialize database");
 
                     app.manage(tokio::sync::Mutex::new(pool));
                 });
@@ -161,21 +67,24 @@ pub fn run() {
                 serial_handler::list_serial_ports,
                 serial_handler::get_current_port,
                 serial_handler::set_serial_port,
-                commands::get_all_detections,
-                commands::get_detection_by_uuid,
-                commands::get_detections_by_status,
-                commands::insert_test_detection,
                 commands::save_setting,
-                commands::get_setting
+                commands::get_setting,
+                commands::create_patient,
+                commands::get_patient_by_uuid,
+                commands::get_all_patients,
+                commands::create_test,
+                commands::get_test_by_uuid,
+                commands::get_all_tests,
+                commands::update_test_status,
+                commands::complete_test
             ]);
     }
 
     #[cfg(not(desktop))]
     {
         builder = builder.invoke_handler(tauri::generate_handler![
-            commands::get_all_detections,
-            commands::get_detection_by_uuid,
-            commands::get_detections_by_status
+            commands::get_all_patients,
+            commands::get_all_tests
         ]);
     }
 

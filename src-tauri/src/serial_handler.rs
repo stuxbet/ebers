@@ -1,5 +1,5 @@
 use crate::detection_client::{create_detection_request, DetectionApiClient};
-use crate::models::{Database, DbState, DetectionRecord};
+use crate::models::DbState;
 use serde::Serialize;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -216,8 +216,6 @@ async fn handle_detection_api_call(
     collection_duration_ms: u64,
     api_client: DetectionApiClient,
 ) {
-    use chrono::Utc;
-
     // Emit loading state
     let _ = app.emit(
         "serial:detection_loading",
@@ -237,35 +235,9 @@ async fn handle_detection_api_call(
             );
 
             // Create a pending detection record
-            let mut detection_record = DetectionRecord {
-                id: None,
-                uuid: dataset_id.clone(),
-                port: port.clone(),
-                baud_rate: baud_rate as i32,
-                collection_duration_ms: collection_duration_ms as i64,
-                detection_result: None,
-                confidence: None,
-                raw_response: None,
-                status: "pending".to_string(),
-                error_message: None,
-                created_at: Utc::now().to_rfc3339(),
-                updated_at: Utc::now().to_rfc3339(),
-            };
-
-            // Get database pool from app state
-            let db_state = app.state::<DbState>();
-            let pool = db_state.lock().await;
-
-            // Insert pending record
-            match Database::insert_detection(&*pool, &detection_record).await {
-                Ok(id) => {
-                    println!("[database] Inserted pending detection with id: {}", id);
-                    detection_record.id = Some(id);
-                }
-                Err(e) => {
-                    println!("[database] Failed to insert pending detection: {}", e);
-                }
-            }
+            // TODO: This will be updated to work with test UUIDs in the new flow
+            // For now, we'll just emit the detection result without saving to database
+            // The test record will be created and managed by the frontend flow
 
             // Call API with retry logic
             match api_client.detect(request).await {
@@ -275,36 +247,13 @@ async fn handle_detection_api_call(
                         response.probability
                     );
 
-                    // Update detection record with success
-                    detection_record.detection_result =
-                        Some(format!("Probability: {}", response.probability));
-                    detection_record.confidence = response.confidence;
-                    detection_record.raw_response = serde_json::to_string(&response).ok();
-                    detection_record.status = "success".to_string();
-                    detection_record.updated_at = Utc::now().to_rfc3339();
-
-                    // Update in database
-                    match Database::update_detection(&*pool, &detection_record).await {
-                        Ok(_) => println!("[database] Updated detection to success"),
-                        Err(e) => println!("[database] Failed to update detection: {}", e),
-                    }
-
+                    // Emit detection result to frontend
                     let _ = app.emit("serial:detection_result", &response);
                 }
                 Err(err) => {
                     println!("[api_client] Detection failed: {}", err);
 
-                    // Update detection record with error
-                    detection_record.status = "error".to_string();
-                    detection_record.error_message = Some(err.clone());
-                    detection_record.updated_at = Utc::now().to_rfc3339();
-
-                    // Update in database
-                    match Database::update_detection(&*pool, &detection_record).await {
-                        Ok(_) => println!("[database] Updated detection to error"),
-                        Err(e) => println!("[database] Failed to update detection: {}", e),
-                    }
-
+                    // Emit error to frontend
                     let _ = app.emit(
                         "serial:detection_error",
                         &DetectionError {
