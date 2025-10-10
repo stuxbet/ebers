@@ -69,7 +69,6 @@ pub struct DetectionApiClient {
     endpoint: String,
     client: reqwest::Client,
     max_retries: u32,
-    timeout: Duration,
 }
 
 impl DetectionApiClient {
@@ -84,7 +83,6 @@ impl DetectionApiClient {
             endpoint,
             client,
             max_retries: 3,
-            timeout: Duration::from_secs(30),
         }
     }
 

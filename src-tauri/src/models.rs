@@ -1,6 +1,6 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::{Deserialize, Serialize};
 use sea_orm::DatabaseConnection;
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -67,12 +67,14 @@ impl Patient {
         }
     }
 
-    /// Get full name
+    /// Get full name (useful for display purposes)
+    #[allow(dead_code)]
     pub fn full_name(&self) -> String {
         format!("{} {}", self.first_name, self.last_name)
     }
 
-    /// Update the updated_at timestamp
+    /// Update the updated_at timestamp (useful for manual updates)
+    #[allow(dead_code)]
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
     }

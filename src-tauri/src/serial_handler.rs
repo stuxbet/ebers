@@ -80,24 +80,6 @@ impl SerialDataState {
     }
 }
 
-/// Load configuration from environment variables and database
-fn load_serial_config() -> SerialConfig {
-    crate::try_load_dotenv();
-
-    // Note: This is a synchronous function, so we can't easily query the database here
-    // The database check is done in get_current_port command instead
-    // For the initial load, we'll use env vars or defaults
-    SerialConfig {
-        port: std::env::var("SERIAL_PORT").unwrap_or_else(|_| "COM3".to_string()),
-        baud_rate: std::env::var("SERIAL_BAUD")
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(115_200),
-        api_endpoint: std::env::var("DETECTION_API_ENDPOINT")
-            .unwrap_or_else(|_| "http://localhost:8000/api/detect".to_string()),
-    }
-}
-
 /// Load configuration asynchronously (can check database)
 async fn load_serial_config_async(app: &AppHandle) -> SerialConfig {
     crate::try_load_dotenv();
