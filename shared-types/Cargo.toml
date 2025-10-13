@@ -1,0 +1,14 @@
+[package]
+name = "shared-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"], optional = true }
+uuid = { version = "1.10", features = ["v4", "serde"], optional = true }
+
+[features]
+default = []
+backend = ["chrono", "uuid"]
+frontend = []

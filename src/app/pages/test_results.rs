@@ -24,12 +24,81 @@ struct CompleteTestArgs {
     data: CompleteTestData,
 }
 
+// Use shared types
+use shared_types::{Patient, Test};
+
 #[component]
 pub fn TestResultsPage(
     on_navigate: WriteSignal<Page>,
     detection_result: ReadSignal<Option<crate::app::serial::DetectionData>>,
     current_test_uuid: ReadSignal<Option<String>>,
 ) -> impl IntoView {
+    let (current_patient, set_current_patient) = signal(None::<Patient>);
+    let (current_test, set_current_test) = signal(None::<Test>);
+    let (loading_patient, set_loading_patient) = signal(false);
+
+    // Fetch test and patient data when test UUID changes
+    Effect::new(move || {
+        if let Some(test_uuid) = current_test_uuid.get() {
+            let test_uuid_clone = test_uuid.clone();
+            spawn_local(async move {
+                set_loading_patient.set(true);
+
+                // First, get the test data
+                let test_args = js_sys::Object::new();
+                js_sys::Reflect::set(
+                    &test_args,
+                    &JsValue::from_str("uuid"),
+                    &JsValue::from_str(&test_uuid_clone),
+                )
+                .unwrap();
+
+                match invoke("get_test_by_uuid", test_args.into()).await {
+                    Ok(test_result) => {
+                        if let Ok(Some(test)) =
+                            serde_wasm_bindgen::from_value::<Option<Test>>(test_result)
+                        {
+                            set_current_test.set(Some(test.clone()));
+
+                            // Now get the patient data using the patient_id from the test
+                            // We need to find the patient by the patient_id, but the backend expects UUID
+                            // For now, let's get all patients and find the one with matching ID
+                            match invoke("get_all_patients", JsValue::NULL).await {
+                                Ok(patients_result) => {
+                                    if let Ok(patients) =
+                                        serde_wasm_bindgen::from_value::<Vec<Patient>>(
+                                            patients_result,
+                                        )
+                                    {
+                                        if let Some(patient) = patients
+                                            .into_iter()
+                                            .find(|p| p.id == Some(test.patient_id))
+                                        {
+                                            set_current_patient.set(Some(patient));
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    console::log_1(&JsValue::from_str(&format!(
+                                        "Failed to fetch patients: {:?}",
+                                        e
+                                    )));
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        console::log_1(&JsValue::from_str(&format!(
+                            "Failed to fetch test: {:?}",
+                            e
+                        )));
+                    }
+                }
+
+                set_loading_patient.set(false);
+            });
+        }
+    });
     // Save results when detection completes
     Effect::new(move || {
         if let (Some(result), Some(test_uuid)) = (detection_result.get(), current_test_uuid.get()) {
@@ -120,40 +189,72 @@ pub fn TestResultsPage(
                     <h2 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--color-text-secondary); border-bottom: 1px solid var(--color-border-light); padding-bottom: 0.5rem;">
                         "Patient Information"
                     </h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Patient Name"
-                            </div>
-                            <div style="font-size: 1rem; color: var(--color-text-primary); font-weight: 500;">
-                                "John Doe" // TODO: Get from patient record
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Date of Birth"
-                            </div>
-                            <div style="font-size: 1rem; color: var(--color-text-primary);">
-                                "1990-01-01" // TODO: Get from patient record
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Patient ID"
-                            </div>
-                            <div style="font-size: 1rem; color: var(--color-text-primary);">
-                                "P-12345" // TODO: Get from patient record
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Test Type"
-                            </div>
-                            <div style="font-size: 1rem; color: var(--color-text-primary); font-weight: 500;">
-                                "COVID-19" // TODO: Get from test record
-                            </div>
-                        </div>
-                    </div>
+                    {move || {
+                        if loading_patient.get() {
+                            view! {
+                                <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
+                                    "Loading patient information..."
+                                </div>
+                            }.into_any()
+                        } else if let Some(patient) = current_patient.get() {
+                            let patient_name = format!("{} {}", patient.first_name, patient.last_name);
+                            let date_of_birth = patient.date_of_birth.clone().unwrap_or_else(|| "Not provided".to_string());
+                            let patient_id = patient.patient_id_number.clone().unwrap_or_else(|| "Not assigned".to_string());
+                            let phone = patient.phone.clone().unwrap_or_else(|| "Not provided".to_string());
+                            let email = patient.email.clone().unwrap_or_else(|| "Not provided".to_string());
+
+                            view! {
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                                    <div>
+                                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            "Patient Name"
+                                        </div>
+                                        <div style="font-size: 1rem; color: var(--color-text-primary); font-weight: 500;">
+                                            {patient_name}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            "Date of Birth"
+                                        </div>
+                                        <div style="font-size: 1rem; color: var(--color-text-primary);">
+                                            {date_of_birth}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            "Patient ID"
+                                        </div>
+                                        <div style="font-size: 1rem; color: var(--color-text-primary);">
+                                            {patient_id}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            "Contact Number"
+                                        </div>
+                                        <div style="font-size: 1rem; color: var(--color-text-primary);">
+                                            {phone}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
+                                            "Email"
+                                        </div>
+                                        <div style="font-size: 1rem; color: var(--color-text-primary);">
+                                            {email}
+                                        </div>
+                                    </div>
+                                </div>
+                            }.into_any()
+                        } else {
+                            view! {
+                                <div style="text-align: center; padding: 2rem; color: var(--color-text-secondary);">
+                                    "Patient information not available"
+                                </div>
+                            }.into_any()
+                        }
+                    }}
                 </div>
 
                 // Detection Results Card

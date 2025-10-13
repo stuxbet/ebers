@@ -1,11 +1,7 @@
 use crate::db_orm::Database;
-use crate::models::{
-    DbState, DetectionResult, Patient, Test, TestStatus, TestType, TestWithPatient,
-};
-use chrono::NaiveDate;
+use crate::models::{DbState, DetectionResult, Patient, Test, TestStatus, TestWithPatient};
 use serde::Deserialize;
 use tauri::State;
-use uuid::Uuid;
 
 // ============================================================================
 // SETTINGS COMMANDS
@@ -40,8 +36,8 @@ pub async fn get_setting(
 pub struct CreatePatientRequest {
     pub first_name: String,
     pub last_name: String,
-    #[serde(default, deserialize_with = "deserialize_optional_date")]
-    pub date_of_birth: Option<NaiveDate>,
+    #[serde(default)]
+    pub date_of_birth: Option<String>,
     #[serde(default)]
     pub patient_id_number: Option<String>,
     #[serde(default)]
@@ -50,20 +46,6 @@ pub struct CreatePatientRequest {
     pub phone: Option<String>,
     #[serde(default)]
     pub notes: Option<String>,
-}
-
-/// Custom deserializer for optional date from string
-fn deserialize_optional_date<'de, D>(deserializer: D) -> Result<Option<NaiveDate>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: Option<String> = Option::deserialize(deserializer)?;
-    match s {
-        Some(date_str) => NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")
-            .map(Some)
-            .map_err(serde::de::Error::custom),
-        None => Ok(None),
-    }
 }
 
 #[tauri::command]
@@ -94,10 +76,10 @@ pub async fn create_patient(
 #[tauri::command]
 pub async fn get_patient_by_uuid(
     db_state: State<'_, DbState>,
-    uuid: Uuid,
+    uuid: String,
 ) -> Result<Option<Patient>, String> {
     let pool = db_state.lock().await;
-    Database::get_patient_by_uuid(&*pool, &uuid.to_string()).await
+    Database::get_patient_by_uuid(&*pool, &uuid).await
 }
 
 #[tauri::command]
@@ -118,8 +100,8 @@ pub async fn get_all_patients(db_state: State<'_, DbState>) -> Result<Vec<Patien
 
 #[derive(Debug, Deserialize)]
 pub struct CreateTestRequest {
-    pub patient_uuid: Uuid,
-    pub test_type: TestType,
+    pub patient_uuid: String,
+    pub test_type: String,
     pub device_id: Option<String>,
     pub firmware_version: Option<String>,
 }
@@ -136,7 +118,7 @@ pub async fn create_test(
     let pool = db_state.lock().await;
 
     // Get patient by UUID
-    let patient = Database::get_patient_by_uuid(&*pool, &test_data.patient_uuid.to_string())
+    let patient = Database::get_patient_by_uuid(&*pool, &test_data.patient_uuid)
         .await?
         .ok_or_else(|| format!("Patient not found: {}", test_data.patient_uuid))?;
 
@@ -159,10 +141,10 @@ pub async fn create_test(
 #[tauri::command]
 pub async fn get_test_by_uuid(
     db_state: State<'_, DbState>,
-    uuid: Uuid,
+    uuid: String,
 ) -> Result<Option<Test>, String> {
     let pool = db_state.lock().await;
-    Database::get_test_by_uuid(&*pool, &uuid.to_string()).await
+    Database::get_test_by_uuid(&*pool, &uuid).await
 }
 
 #[tauri::command]
@@ -180,13 +162,13 @@ pub async fn get_all_tests(db_state: State<'_, DbState>) -> Result<Vec<TestWithP
 #[tauri::command]
 pub async fn update_test_status(
     db_state: State<'_, DbState>,
-    test_uuid: Uuid,
+    test_uuid: String,
     status: TestStatus,
 ) -> Result<(), String> {
     println!("update_test_status called: {} -> {:?}", test_uuid, status);
     let pool = db_state.lock().await;
 
-    let mut test = Database::get_test_by_uuid(&*pool, &test_uuid.to_string())
+    let mut test = Database::get_test_by_uuid(&*pool, &test_uuid)
         .await?
         .ok_or_else(|| format!("Test not found: {}", test_uuid))?;
 
@@ -194,7 +176,7 @@ pub async fn update_test_status(
         TestStatus::InProgress => test.mark_in_progress(),
         TestStatus::Error => test.mark_error("Test failed".to_string()),
         _ => {
-            test.status = status;
+            test.status = status.as_str().to_string();
             test.touch();
         }
     }
@@ -204,7 +186,7 @@ pub async fn update_test_status(
 
 #[derive(Debug, Deserialize)]
 pub struct CompleteTestRequest {
-    pub test_uuid: Uuid,
+    pub test_uuid: String,
     pub detection_result: DetectionResult,
     pub confidence: f64,
     pub raw_response: String,
@@ -218,11 +200,15 @@ pub async fn complete_test(
     println!("complete_test called for: {}", data.test_uuid);
     let pool = db_state.lock().await;
 
-    let mut test = Database::get_test_by_uuid(&*pool, &data.test_uuid.to_string())
+    let mut test = Database::get_test_by_uuid(&*pool, &data.test_uuid)
         .await?
         .ok_or_else(|| format!("Test not found: {}", data.test_uuid))?;
 
-    test.mark_completed(data.detection_result, data.confidence, data.raw_response);
+    test.mark_completed(
+        data.detection_result.as_str().to_string(),
+        data.confidence,
+        data.raw_response,
+    );
 
     Database::update_test(&*pool, &test).await
 }

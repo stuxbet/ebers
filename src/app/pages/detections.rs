@@ -1,49 +1,9 @@
 use crate::app::Page;
 use leptos::prelude::*;
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-/// Patient record from the database
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Patient {
-    pub id: Option<i64>,
-    pub uuid: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub date_of_birth: Option<String>,
-    pub patient_id_number: Option<String>,
-    pub email: Option<String>,
-    pub phone: Option<String>,
-    pub notes: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-/// Test record from the database
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Test {
-    pub id: Option<i64>,
-    pub uuid: String,
-    pub patient_id: i64,
-    pub test_type: String,
-    pub device_id: Option<String>,
-    pub firmware_version: Option<String>,
-    pub detection_result: Option<String>,
-    pub confidence: Option<f64>,
-    pub raw_response: Option<String>,
-    pub status: String,
-    pub error_message: Option<String>,
-    pub created_at: String,
-    pub updated_at: String,
-    pub completed_at: Option<String>,
-}
-
-/// Test with patient information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TestWithPatient {
-    pub test: Test,
-    pub patient: Patient,
-}
+// Use shared types
+use shared_types::{Patient, Test, TestWithPatient};
 
 #[wasm_bindgen]
 extern "C" {
