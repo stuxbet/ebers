@@ -51,7 +51,10 @@ struct CreateTestRequest {
 }
 
 #[component]
-pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
+pub fn PatientFormPage(
+    on_navigate: WriteSignal<Page>,
+    set_current_test_uuid: WriteSignal<Option<String>>,
+) -> impl IntoView {
     // Form state
     let (first_name, set_first_name) = signal(String::new());
     let (last_name, set_last_name) = signal(String::new());
@@ -156,8 +159,26 @@ pub fn PatientFormPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                             )
                             .await
                             {
-                                Ok(_) => {
-                                    console::log_1(&JsValue::from_str("Test created successfully"));
+                                Ok(result) => {
+                                    // Extract the test UUID from the result
+                                    if let Ok(test_uuid) =
+                                        js_sys::Reflect::get(&result, &JsValue::from_str("uuid"))
+                                    {
+                                        // Try as string first, fallback to JSON stringify for Uuid objects
+                                        let uuid_str = if let Some(s) = test_uuid.as_string() {
+                                            Some(s)
+                                        } else {
+                                            js_sys::JSON::stringify(&test_uuid)
+                                                .ok()
+                                                .and_then(|s| s.as_string())
+                                                .map(|s| s.trim_matches('"').to_string())
+                                        };
+
+                                        if let Some(uuid_str) = uuid_str {
+                                            set_current_test_uuid.set(Some(uuid_str));
+                                        }
+                                    }
+
                                     set_submitting.set(false);
                                     on_navigate.set(Page::TestReading);
                                 }

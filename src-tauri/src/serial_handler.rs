@@ -213,12 +213,8 @@ async fn handle_detection_api_call(
                 dataset_id
             );
 
-            // Create a pending detection record
-            // TODO: This will be updated to work with test UUIDs in the new flow
-            // For now, we'll just emit the detection result without saving to database
-            // The test record will be created and managed by the frontend flow
-
             // Call API with retry logic
+            // Note: Results are emitted to frontend and saved by the TestResultsPage
             match api_client.detect(request).await {
                 Ok(response) => {
                     println!(

@@ -1,11 +1,83 @@
 use crate::app::Page;
 use leptos::prelude::*;
+use leptos::task::spawn_local;
+use leptos::web_sys::console;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(catch, js_namespace = ["window", "__TAURI__", "core"])]
+    async fn invoke(cmd: &str, args: JsValue) -> Result<JsValue, JsValue>;
+}
+
+#[derive(Serialize, Deserialize)]
+struct CompleteTestData {
+    test_uuid: String,
+    detection_result: String,
+    confidence: f64,
+    raw_response: String,
+}
+
+#[derive(Serialize)]
+struct CompleteTestArgs {
+    data: CompleteTestData,
+}
 
 #[component]
 pub fn TestResultsPage(
     on_navigate: WriteSignal<Page>,
     detection_result: ReadSignal<Option<crate::app::serial::DetectionData>>,
+    current_test_uuid: ReadSignal<Option<String>>,
 ) -> impl IntoView {
+    // Save results when detection completes
+    Effect::new(move || {
+        if let (Some(result), Some(test_uuid)) = (detection_result.get(), current_test_uuid.get()) {
+            // Determine detection result based on probability
+            let detection_result_str = if result.probability >= 0.7 {
+                "positive"
+            } else if result.probability >= 0.3 {
+                "inconclusive"
+            } else {
+                "negative"
+            };
+
+            let test_uuid_clone = test_uuid.clone();
+            let result_clone = result.clone();
+
+            spawn_local(async move {
+                let complete_data = CompleteTestData {
+                    test_uuid: test_uuid_clone.clone(),
+                    detection_result: detection_result_str.to_string(),
+                    confidence: result_clone.confidence.unwrap_or(result_clone.probability),
+                    raw_response: format!(
+                        r#"{{"probability": {}, "confidence": {}, "dataset_id": "{}", "processed_at": "{}"}}"#,
+                        result_clone.probability,
+                        result_clone.confidence.unwrap_or(result_clone.probability),
+                        result_clone.dataset_id,
+                        result_clone.processed_at
+                    ),
+                };
+
+                let args = CompleteTestArgs {
+                    data: complete_data,
+                };
+
+                if let Err(e) = invoke(
+                    "complete_test",
+                    serde_wasm_bindgen::to_value(&args).unwrap(),
+                )
+                .await
+                {
+                    console::log_1(&JsValue::from_str(&format!(
+                        "Failed to save test results: {:?}",
+                        e
+                    )));
+                }
+            });
+        }
+    });
+
     let on_new_test = move |_| {
         on_navigate.set(Page::Landing);
     };

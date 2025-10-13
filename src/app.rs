@@ -32,6 +32,9 @@ pub fn App() -> impl IntoView {
     let (detection_result, set_detection_result) = signal(None::<serial::DetectionData>);
     let (detection_error, set_detection_error) = signal(None::<String>);
 
+    // Current test UUID (set when creating a test, used to save results)
+    let (current_test_uuid, set_current_test_uuid) = signal(None::<String>);
+
     // Initialize serial communication
     spawn_local(async move {
         initialize_serial(
@@ -60,6 +63,7 @@ pub fn App() -> impl IntoView {
                 Page::PatientForm => view! {
                     <PatientFormPage
                         on_navigate=set_current_page
+                        set_current_test_uuid=set_current_test_uuid
                     />
                 }.into_any(),
                 Page::TestReading => view! {
@@ -75,6 +79,7 @@ pub fn App() -> impl IntoView {
                     <TestResultsPage
                         on_navigate=set_current_page
                         detection_result=detection_result
+                        current_test_uuid=current_test_uuid
                     />
                 }.into_any(),
                 Page::History => view! {
