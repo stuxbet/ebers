@@ -33,11 +33,7 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                 </p>
             </header>
 
-            // Main Action Card
             <div class="card" style="max-width: 600px; margin: 0 auto 2rem auto; text-align: center; padding: 3rem;">
-                <div style="font-size: 4rem; margin-bottom: 1.5rem;">
-                    "🔬"
-                </div>
                 <h2 style="font-size: 1.75rem; font-weight: 400; margin-bottom: 1rem; color: var(--color-text-primary);">
                     "Ready to Begin Testing"
                 </h2>
@@ -45,69 +41,49 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                     "Start a new test by entering patient information and connecting the test device."
                 </p>
                 <button
-                    class="button"
+                    class="button primary"
                     on:click=on_begin_test
-                    style="padding: 1rem 3rem; font-size: 1.125rem; background-color: var(--color-accent-primary); color: white; font-weight: 500; box-shadow: var(--shadow-md);"
+                    style="padding: 1rem 3rem; font-size: 1.125rem; font-weight: 500;"
                 >
-                    "Begin Test →"
+                    "Begin Test"
                 </button>
             </div>
 
-            // Quick Stats Dashboard
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                // Total Tests Card
                 <div class="card stat-card">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 2.5rem;">
-                            "📊"
+                    <div style="text-align: center; padding: 1rem;">
+                        <div style="font-size: 2.5rem; font-weight: 300; color: var(--color-text-primary); margin-bottom: 0.5rem;">
+                            "0"
                         </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Total Tests"
-                            </div>
-                            <div style="font-size: 2rem; font-weight: 300; color: var(--color-text-primary);">
-                                "0" // TODO: Get from database
-                            </div>
+                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                            "Total Tests"
                         </div>
                     </div>
                 </div>
 
-                // Today's Tests Card
                 <div class="card stat-card">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 2.5rem;">
-                            "📅"
+                    <div style="text-align: center; padding: 1rem;">
+                        <div style="font-size: 2.5rem; font-weight: 300; color: var(--color-text-primary); margin-bottom: 0.5rem;">
+                            "0"
                         </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Today's Tests"
-                            </div>
-                            <div style="font-size: 2rem; font-weight: 300; color: var(--color-text-primary);">
-                                "0" // TODO: Get from database
-                            </div>
+                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                            "Today's Tests"
                         </div>
                     </div>
                 </div>
 
-                // Patients Card
                 <div class="card stat-card">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-size: 2.5rem;">
-                            "👥"
+                    <div style="text-align: center; padding: 1rem;">
+                        <div style="font-size: 2.5rem; font-weight: 300; color: var(--color-text-primary); margin-bottom: 0.5rem;">
+                            "0"
                         </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 0.25rem;">
-                                "Total Patients"
-                            </div>
-                            <div style="font-size: 2rem; font-weight: 300; color: var(--color-text-primary);">
-                                "0" // TODO: Get from database
-                            </div>
+                        <div style="font-size: 0.875rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                            "Total Patients"
                         </div>
                     </div>
                 </div>
             </div>
 
-            // Recent Tests Section
             <div class="card" style="margin-bottom: 2rem;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
                     <h2 style="font-size: 1.25rem; font-weight: 500; margin: 0; color: var(--color-text-secondary);">
@@ -121,37 +97,12 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                         "View All →"
                     </button>
                 </div>
-
-                // Placeholder for recent tests
                 <div style="text-align: center; padding: 3rem; color: var(--color-text-secondary);">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">
-                        "📋"
-                    </div>
-                    <p style="margin: 0;">
+                    <p style="margin: 0; font-size: 0.9375rem;">
                         "No tests yet. Click 'Begin Test' to get started."
                     </p>
                 </div>
             </div>
-
-            // Quick Actions
-            <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; max-width: 600px; margin: 0 auto;">
-                <button
-                    class="card"
-                    on:click=on_view_history
-                    style="cursor: pointer; text-align: left; padding: 1.5rem; border: 1px solid var(--color-border-light); background: var(--color-surface); transition: all 0.2s ease;"
-                >
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">
-                        "📊"
-                    </div>
-                    <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.25rem; color: var(--color-text-primary);">
-                        "View Test History"
-                    </div>
-                    <div style="font-size: 0.875rem; color: var(--color-text-secondary);">
-                        "Browse all previous tests and results"
-                    </div>
-                </button>
-            </div>
         </div>
     }
 }
-

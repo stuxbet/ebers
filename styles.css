@@ -1,29 +1,39 @@
-.logo.leptos:hover {
-  filter: drop-shadow(0 0 2em #a82e20);
-}
+/* ==========================================================================
+   CSS Variables & Root Styles
+   ========================================================================== */
+
 :root {
-  /* Palantir-inspired color palette */
+  /* Colors - Background */
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fa;
-  --color-bg-tertiary: #e9ecef;
+  --color-bg-secondary: #f7f8fa;
+  --color-bg-tertiary: #eef1f5;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
 
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6c757d;
-  --color-text-tertiary: #adb5bd;
+  /* Colors - Text */
+  --color-text-primary: #0f1419;
+  --color-text-secondary: #5c6b77;
+  --color-text-tertiary: #8a9ba8;
 
+  /* Colors - Accent */
   --color-accent-primary: #7dd3c0;
   --color-accent-secondary: #5fb8a6;
   --color-accent-hover: #4da393;
 
-  --color-border-light: #e9ecef;
-  --color-border-medium: #dee2e6;
-  --color-border-dark: #adb5bd;
+  /* Colors - Borders */
+  --color-border-light: #e1e8ed;
+  --color-border-medium: #d1dce5;
+  --color-border-dark: #8a9ba8;
 
+  /* Colors - Status */
   --color-success: #7dd3c0;
-  --color-error: #dc3545;
-  --color-warning: #ffc107;
+  --color-success-bg: #d1f4e0;
+  --color-error: #db3737;
+  --color-error-bg: #f5d5d5;
+  --color-warning: #d9822b;
+  --color-warning-bg: #fdf2e9;
+  --color-info: #137cbd;
+  --color-info-bg: #d7ecfa;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -32,20 +42,22 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
   /* Typography */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
   font-weight: 400;
-
   color: var(--color-text-primary);
   background-color: var(--color-bg-secondary);
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
+
+/* ==========================================================================
+   Layout Components
+   ========================================================================== */
 
 .container {
   margin: 0;
@@ -56,132 +68,109 @@
   background-color: var(--color-bg-secondary);
 }
 
-/* Card Components - Palantir style */
+/* ==========================================================================
+   Card Components
+   ========================================================================== */
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+  position: relative;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   border-color: var(--color-border-medium);
+  transform: translateY(-1px);
 }
 
 .card-elevated {
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-/* Asset Card - like the screenshot */
-.asset-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: var(--shadow-md);
-  max-width: 300px;
-}
+/* ==========================================================================
+   Typography
+   ========================================================================== */
 
-.asset-header {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 1rem;
-}
-
-.asset-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.asset-info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.asset-label {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.asset-value {
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-.health-score {
-  font-size: 3rem;
+h1 {
+  text-align: center;
   font-weight: 300;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
-  margin: 1rem 0;
 }
 
-.row {
-  display: flex;
-  justify-content: center;
+h2 {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+h3 {
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-accent-primary);
   text-decoration: inherit;
+  transition: color 0.15s ease;
 }
 
 a:hover {
-  color: #535bf2;
+  color: var(--color-accent-hover);
 }
 
-h1 {
-  text-align: center;
-}
+/* ==========================================================================
+   Form Elements & Buttons
+   ========================================================================== */
 
 input,
-/* Button Styles - Palantir inspired */
 button {
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid var(--color-border-medium);
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   font-family: inherit;
   color: var(--color-text-primary);
   background-color: var(--color-surface);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
+  letter-spacing: 0.01em;
 }
 
 button:hover {
   background-color: var(--color-bg-secondary);
-  border-color: var(--color-border-dark);
+  border-color: var(--color-accent-primary);
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Primary Button */
 button.primary {
   background-color: var(--color-accent-primary);
   border-color: var(--color-accent-primary);
   color: #ffffff;
+  font-weight: 600;
 }
 
 button.primary:hover {
@@ -189,15 +178,9 @@ button.primary:hover {
   border-color: var(--color-accent-secondary);
 }
 
-/* Icon Buttons */
 button.icon-only {
   padding: 0.5rem;
   aspect-ratio: 1;
-}
-
-input,
-button {
-  outline: none;
 }
 
 input:focus-visible,
@@ -206,31 +189,10 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-#greet-input {
-  margin-right: 5px;
-}
+/* ==========================================================================
+   Status Components
+   ========================================================================== */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
-
-/* Device Status Styles - Updated to Palantir style */
 .device-status {
   margin: 2rem 0;
   padding: 2rem;
@@ -281,37 +243,10 @@ button:focus-visible {
   background-color: var(--color-error);
 }
 
-.read-results-btn {
-  background-color: var(--color-accent-primary);
-  color: white;
-  border: none;
-  padding: 0.875rem 2rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  border-radius: 6px;
-  box-shadow: var(--shadow-md);
-  transition: all 0.2s ease;
-}
+/* ==========================================================================
+   Results & Data Display
+   ========================================================================== */
 
-.read-results-btn:hover {
-  background-color: var(--color-accent-secondary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.read-results-btn:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
-}
-
-.connection-message {
-  color: var(--color-text-tertiary);
-  font-size: 0.875rem;
-  margin-top: 1rem;
-}
-
-/* Results Page Styles - Updated to Palantir style */
 .results-header {
   display: flex;
   justify-content: space-between;
@@ -319,23 +254,6 @@ button:focus-visible {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--color-border-light);
-}
-
-.home-btn {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-medium);
-  padding: 0.625rem 1.25rem;
-  font-size: 0.875rem;
-  border-radius: 6px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
-}
-
-.home-btn:hover {
-  background-color: var(--color-bg-secondary);
-  border-color: var(--color-border-dark);
-  box-shadow: var(--shadow-md);
 }
 
 .results-content {
@@ -396,21 +314,10 @@ button:focus-visible {
   font-size: 0.875rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .device-status {
-    background-color: rgba(31, 41, 55, 0.8);
-  }
+/* ==========================================================================
+   Badge & Platform Components
+   ========================================================================== */
 
-  .serial-data {
-    background-color: rgba(31, 41, 55, 0.8);
-  }
-
-  .results-info {
-    background-color: rgba(59, 130, 246, 0.2);
-  }
-}
-
-/* Badge/Pill Components - like the flow diagram */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -435,79 +342,10 @@ button:focus-visible {
   color: var(--color-text-primary);
 }
 
-/* Flow Diagram Container */
-.flow-container {
-  position: relative;
-  padding: 3rem;
-  background: linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
-  border-radius: 12px;
-  overflow: hidden;
-}
+/* ==========================================================================
+   Animations
+   ========================================================================== */
 
-.flow-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Isometric Grid Background */
-.isometric-bg {
-  position: relative;
-  background-image:
-    linear-gradient(30deg, var(--color-border-light) 12%, transparent 12.5%, transparent 87%, var(--color-border-light) 87.5%, var(--color-border-light)),
-    linear-gradient(150deg, var(--color-border-light) 12%, transparent 12.5%, transparent 87%, var(--color-border-light) 87.5%, var(--color-border-light)),
-    linear-gradient(30deg, var(--color-border-light) 12%, transparent 12.5%, transparent 87%, var(--color-border-light) 87.5%, var(--color-border-light)),
-    linear-gradient(150deg, var(--color-border-light) 12%, transparent 12.5%, transparent 87%, var(--color-border-light) 87.5%, var(--color-border-light));
-  background-size: 80px 140px;
-  background-position: 0 0, 0 0, 40px 70px, 40px 70px;
-}
-
-/* Platform Cards - like the environment cards */
-.platform-card {
-  background: #000000;
-  border-radius: 12px;
-  padding: 2rem;
-  min-width: 150px;
-  min-height: 150px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.platform-card::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-}
-
-.platform-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-}
-
-.platform-icon {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 1rem;
-}
-
-.platform-name {
-  color: #ffffff;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -551,59 +389,41 @@ button:focus-visible {
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
+/* ==========================================================================
+   Loading Spinners
+   ========================================================================== */
 
-  h1 {
-    font-size: 1.75rem !important;
-  }
-
-  .flow-items {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .badge {
-    justify-content: center;
-  }
-
-  .results-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .asset-info-row {
-    font-size: 0.8rem;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* Enhanced Card Hover Effects */
-.card {
-  position: relative;
-  overflow: hidden;
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
 }
 
-.card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-accent-primary), var(--color-accent-secondary));
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+.spinner-large {
+  width: 60px;
+  height: 60px;
+  border: 4px solid var(--color-border-light);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin: 0 auto;
 }
 
-.card:hover::after {
-  transform: scaleX(1);
-}
+/* ==========================================================================
+   Profile Menu & Dropdowns
+   ========================================================================== */
 
-/* Profile Menu Styles */
 .profile-menu-wrapper {
   position: absolute;
   top: 1rem;
@@ -669,12 +489,12 @@ button:focus-visible {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--color-text-primary);
   transition: background-color 0.15s ease;
   border-radius: 0;
   box-shadow: none;
+  font-weight: 500;
 }
 
 .dropdown-item:hover {
@@ -686,148 +506,10 @@ button:focus-visible {
   transform: none;
 }
 
-.dropdown-icon {
-  font-size: 1.125rem;
-}
+/* ==========================================================================
+   Form Components
+   ========================================================================== */
 
-/* Settings Page Styles */
-.settings-section {
-  margin-bottom: 2rem;
-}
-
-.settings-section:last-child {
-  margin-bottom: 0;
-}
-
-.settings-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: var(--color-bg-secondary);
-  border-radius: 6px;
-  margin-bottom: 0.75rem;
-}
-
-.settings-item:last-child {
-  margin-bottom: 0;
-}
-
-.settings-divider {
-  height: 1px;
-  background: var(--color-border-light);
-  margin: 2rem 0;
-}
-
-.toggle-placeholder {
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  background: var(--color-bg-tertiary);
-}
-
-/* Smooth Page Transitions */
-@keyframes pageTransition {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Enhanced Button Styles */
-button {
-  position: relative;
-  overflow: hidden;
-}
-
-button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-button:active::before {
-  width: 300px;
-  height: 300px;
-}
-
-/* Gradient Text Effect for Headers */
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-text-primary), var(--color-accent-primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Loading Spinner */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--color-border-light);
-  border-top-color: var(--color-accent-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-
-.spinner-large {
-  width: 60px;
-  height: 60px;
-  border: 4px solid var(--color-border-light);
-  border-top-color: var(--color-accent-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  display: inline-block;
-  margin: 0 auto;
-}
-
-/* Tooltip Styles */
-.tooltip {
-  position: relative;
-  display: inline-block;
-}
-
-.tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.5rem 0.75rem;
-  background: #1a1a1a;
-  color: white;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  margin-bottom: 0.5rem;
-}
-
-.tooltip:hover::after {
-  opacity: 1;
-}
-
-/* Form Styles */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -875,11 +557,151 @@ select.form-input {
   padding-right: 2.5rem;
 }
 
-/* Stat Card */
+/* ==========================================================================
+   Settings Components
+   ========================================================================== */
+
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.settings-item:last-child {
+  margin-bottom: 0;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 2rem 0;
+}
+
 .stat-card {
-  transition: transform 0.2s ease;
+  transition: transform 0.15s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+.text-mono {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+}
+
+.text-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.border-accent {
+  border-left: 3px solid var(--color-accent-primary);
+}
+
+.bg-subtle {
+  background-color: var(--color-bg-tertiary);
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+
+.status-positive {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.status-negative {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.status-warning {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.status-info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: var(--color-info);
+}
+
+.data-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.data-value {
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.data-value-large {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem !important;
+  }
+
+  .results-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .badge {
+    justify-content: center;
+  }
 }

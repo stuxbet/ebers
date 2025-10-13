@@ -100,14 +100,14 @@ pub fn TestResultsPage(
                             on:click=on_view_history
                             style="padding: 0.5rem 1rem;"
                         >
-                            "📊 View History"
+                            "View History"
                         </button>
                         <button
                             class="button"
                             on:click=on_new_test
                             style="padding: 0.5rem 1rem; background-color: var(--color-accent-primary); color: white;"
                         >
-                            "➕ New Test"
+                            "New Test"
                         </button>
                     </div>
                 </div>
@@ -166,7 +166,6 @@ pub fn TestResultsPage(
                         if let Some(result) = detection_result.get() {
                             view! {
                                 <div>
-                                    // Result Status Banner
                                     <div style=format!(
                                         "padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; {}",
                                         if result.probability >= 0.7 {
@@ -177,14 +176,27 @@ pub fn TestResultsPage(
                                             "background-color: #dcfce7; border: 2px solid #16a34a;"
                                         }
                                     )>
-                                        <div style="font-size: 3rem; margin-bottom: 0.5rem;">
-                                            {if result.probability >= 0.7 {
-                                                "🔴"
-                                            } else if result.probability >= 0.3 {
-                                                "🟡"
-                                            } else {
-                                                "🟢"
-                                            }}
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <div style=format!(
+                                                "width: 64px; height: 64px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; {}",
+                                                if result.probability >= 0.7 {
+                                                    "background-color: #dc2626;"
+                                                } else if result.probability >= 0.3 {
+                                                    "background-color: #f59e0b;"
+                                                } else {
+                                                    "background-color: #16a34a;"
+                                                }
+                                            )>
+                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: white;">
+                                                    {if result.probability >= 0.7 {
+                                                        view! { <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/> }
+                                                    } else if result.probability >= 0.3 {
+                                                        view! { <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/> }
+                                                    } else {
+                                                        view! { <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" fill="currentColor"/> }
+                                                    }}
+                                                </svg>
+                                            </div>
                                         </div>
                                         <div style=format!(
                                             "font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; {}",
@@ -262,8 +274,7 @@ pub fn TestResultsPage(
                         } else {
                             view! {
                                 <div style="text-align: center; padding: 3rem; color: var(--color-text-secondary);">
-                                    <div style="font-size: 3rem; margin-bottom: 1rem;">"📊"</div>
-                                    <p>"No detection results available"</p>
+                                    <p style="font-size: 0.9375rem;">"No detection results available"</p>
                                 </div>
                             }.into_any()
                         }
@@ -316,7 +327,7 @@ pub fn TestResultsPage(
                         on:click=on_view_history
                         style="padding: 0.75rem 1.5rem;"
                     >
-                        "📊 View All Tests"
+                        "View All Tests"
                     </button>
                     <button
                         class="button"

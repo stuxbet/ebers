@@ -26,29 +26,33 @@ pub fn TestReadingPage(
         <div class="animate-fade-in" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh;">
             // Main Loading Card
             <div class="card" style="max-width: 600px; text-align: center; padding: 3rem;">
-                // Status Icon/Animation
                 <div style="margin-bottom: 2rem;">
                     {move || {
                         if detection_error.get().is_some() {
                             view! {
-                                <div style="font-size: 4rem; color: var(--color-error);">
-                                    "⚠️"
+                                <div class="status-indicator status-negative">
+                                    "ERROR"
                                 </div>
                             }.into_any()
                         } else if detection_loading.get() {
                             view! {
-                                <div style="font-size: 4rem; color: var(--color-accent-primary);">
-                                    "🔬"
+                                <div class="status-indicator status-info">
+                                    "ANALYZING"
                                 </div>
                             }.into_any()
                         } else if connected.get() {
                             view! {
-                                <div class="spinner-large"></div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                    <div class="spinner-large"></div>
+                                    <div class="status-indicator status-positive">
+                                        "CONNECTED"
+                                    </div>
+                                </div>
                             }.into_any()
                         } else {
                             view! {
-                                <div style="font-size: 4rem; color: var(--color-text-tertiary);">
-                                    "🔌"
+                                <div class="status-indicator">
+                                    "WAITING FOR CONNECTION"
                                 </div>
                             }.into_any()
                         }

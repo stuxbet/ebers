@@ -140,7 +140,7 @@ pub fn DetectionsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                         on:click=move |_| load_tests()
                         style="padding: 0.5rem 1rem;"
                     >
-                        "🔄 Refresh"
+                        "Refresh"
                     </button>
                 </div>
 

@@ -59,7 +59,6 @@ pub fn ProfileMenu(on_navigate: WriteSignal<Page>) -> impl IntoView {
                                 class="dropdown-item"
                                 on:click=navigate_to_settings
                             >
-                                <span class="dropdown-icon">"⚙️"</span>
                                 <span>"Settings"</span>
                             </button>
                         </div>
@@ -71,4 +70,3 @@ pub fn ProfileMenu(on_navigate: WriteSignal<Page>) -> impl IntoView {
         </div>
     }
 }
-

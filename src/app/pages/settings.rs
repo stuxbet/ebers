@@ -168,7 +168,7 @@ pub fn SettingsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                                     on:click=refresh_ports
                                     style="padding: 0.5rem 0.75rem; font-size: 0.875rem;"
                                 >
-                                    "🔄 Refresh"
+                                    "Refresh"
                                 </button>
                             </div>
 
@@ -254,7 +254,7 @@ pub fn SettingsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                                 </div>
                             </div>
                             <div class="toggle-placeholder" style="color: var(--color-success);">
-                                "✓ Enabled"
+                                "Enabled"
                             </div>
                         </div>
                     </div>
@@ -275,7 +275,7 @@ pub fn SettingsPage(on_navigate_to_home: WriteSignal<Page>) -> impl IntoView {
                                 </div>
                             </div>
                             <div class="toggle-placeholder" style="color: var(--color-success);">
-                                "✓ Enabled"
+                                "Enabled"
                             </div>
                         </div>
                     </div>
