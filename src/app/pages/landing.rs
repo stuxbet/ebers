@@ -28,6 +28,10 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
         on_navigate.set(Page::History);
     };
 
+    let on_scientific_view = move |_: leptos::ev::MouseEvent| {
+        on_navigate.set(Page::ScientificView);
+    };
+
     // Load recent tests and statistics on component mount
     spawn_local(async move {
         set_loading_tests.set(true);
@@ -47,7 +51,7 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                         // Count today's tests (simplified - just count recent ones for demo)
                         let today_count = all_tests
                             .iter()
-                            .filter(|test| {
+                            .filter(|_test| {
                                 // For demo purposes, count tests from last 24 hours as "today"
                                 // In real implementation, you'd parse the created_at timestamp
                                 true // Simplified for now
@@ -104,13 +108,22 @@ pub fn LandingPage(on_navigate: WriteSignal<Page>) -> impl IntoView {
                 <p style="color: var(--color-text-secondary); margin-bottom: 2rem; font-size: 1rem; line-height: 1.6;">
                     "Start a new test by entering patient information and connecting the test device."
                 </p>
-                <button
-                    class="button primary"
-                    on:click=on_begin_test
-                    style="padding: 1rem 3rem; font-size: 1.125rem; font-weight: 500;"
-                >
-                    "Begin Test"
-                </button>
+                <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                    <button
+                        class="button primary"
+                        on:click=on_begin_test
+                        style="padding: 1rem 3rem; font-size: 1.125rem; font-weight: 500;"
+                    >
+                        "Begin Test"
+                    </button>
+                    <button
+                        class="button"
+                        on:click=on_scientific_view
+                        style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 400;"
+                    >
+                        "Scientific View"
+                    </button>
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">

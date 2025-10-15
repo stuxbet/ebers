@@ -7,7 +7,8 @@ mod serial;
 
 use components::ProfileMenu;
 use pages::{
-    DetectionsPage, LandingPage, PatientFormPage, SettingsPage, TestReadingPage, TestResultsPage,
+    DetectionsPage, LandingPage, PatientFormPage, ScientificViewPage, SettingsPage,
+    TestReadingPage, TestResultsPage,
 };
 use serial::initialize_serial;
 
@@ -19,6 +20,7 @@ pub enum Page {
     TestResults,
     History,
     Settings,
+    ScientificView,
 }
 
 #[component]
@@ -90,6 +92,11 @@ pub fn App() -> impl IntoView {
                 Page::Settings => view! {
                     <SettingsPage
                         on_navigate_to_home=set_current_page
+                    />
+                }.into_any(),
+                Page::ScientificView => view! {
+                    <ScientificViewPage
+                        on_navigate=set_current_page
                     />
                 }.into_any(),
             }}

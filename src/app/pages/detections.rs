@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 
 // Use shared types
-use shared_types::{Patient, Test, TestWithPatient};
+use shared_types::TestWithPatient;
 
 #[wasm_bindgen]
 extern "C" {

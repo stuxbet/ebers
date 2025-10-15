@@ -34,7 +34,7 @@ pub fn TestResultsPage(
     current_test_uuid: ReadSignal<Option<String>>,
 ) -> impl IntoView {
     let (current_patient, set_current_patient) = signal(None::<Patient>);
-    let (current_test, set_current_test) = signal(None::<Test>);
+    let (_current_test, set_current_test) = signal(None::<Test>);
     let (loading_patient, set_loading_patient) = signal(false);
 
     // Fetch test and patient data when test UUID changes
